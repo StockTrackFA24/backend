@@ -1,6 +1,7 @@
 const {MongoClient} = require('mongodb');
 let converter = require('json-2-csv');
 const fs = require('fs');
+const {json2csv} = require("json-2-csv");
 require('dotenv').config();
 
 const uri = process.env.MONGO_URI;
@@ -19,6 +20,10 @@ async function main(){
     try {
         // Connect to the MongoDB cluster
         await client.connect();
+        console.log("We got connected")
+        //await exportToCSV(client, './test.csv');
+        //await importFromCSV(client, './test_data.csv');
+        /*
         let varId = 0;
         varName = "Helmet"
         varDescription = "A piece of Armor used to protect your head"
@@ -47,6 +52,7 @@ async function main(){
 
         //Update the stock of Specific item of Id, by value x, true if overwrite, false if additive
         await updateStock(client, 0, 4, true)
+         */
 
     } catch (e) {
         console.error(e);
@@ -94,7 +100,31 @@ async function updateStock(client, id, newStock, overwrite){
 }
 
 async function exportToCSV(client, file_path) {
-
+    let catalogList = []
+    let stockList = []
+    let catalogCursor = await client.db(nameOfDatabase).collection(catalogCollection).find({})
+    let stockCursor = await client.db(nameOfDatabase).collection(stockCollection).find({})
+    catalogList = await catalogCursor.toArray();
+    stockList = await stockCursor.toArray();
+    catalogList.sort((a,b) => a._id > b._id ? 1 : -1)
+    stockList.sort((a,b) => a._id > b._id ? 1 : -1)
+    console.log(catalogList);
+    console.log(stockList);
+    numItems = catalogList.length
+    // This has the assumption that each item in the catalog will have a corresponding item in stock
+    for (let i=0; i<numItems; i++){
+        catalogList[i].stock =stockList[i].stock
+    }
+    csvString = json2csv(catalogList);
+    console.log(csvString);
+    fs.writeFile(file_path, csvString, err => {
+        if (err) {
+            console.error(err);
+        }
+        else {
+            console.log(`CSV output written to ${file_path}`);
+        }
+    });
 }
 
 async function generateSKU(client) {
@@ -120,13 +150,14 @@ async function generateSKU(client) {
 }
 
 async function importFromCSV(client, file_path) {
-    let file_contents = fs.readFileSync('test.csv',{
+    let file_contents = fs.readFileSync(file_path,{
         trimHeaderFields: true,
         trimFieldValues: true
     }).toString();
     file_contents = file_contents.replaceAll("\r\n", "\n");
     let converted_objects = converter.csv2json(file_contents);
-    converted_objects.forEach(item =>{
+    console.log(converted_objects)
+    for (const item of converted_objects) {
         let extra_keys = Object.keys(item);
         delete extra_keys[extra_keys.indexOf('_id')];
         delete extra_keys[extra_keys.indexOf('stock')];
@@ -138,8 +169,8 @@ async function importFromCSV(client, file_path) {
         })
         converted_stock['_id'] = item._id;
         converted_stock['stock'] = item.stock;
-        createItem(client, converted_catalog, converted_stock);
-    })
+        await createItem(client, converted_catalog, converted_stock);
+    }
 }
 
 main()
