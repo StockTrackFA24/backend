@@ -1,10 +1,11 @@
 const {MongoClient} = require('mongodb');
+
 let converter = require('json-2-csv');
 const fs = require('fs');
 const {json2csv} = require("json-2-csv");
 require('dotenv').config();
 
-const uri = process.env.MONGO_URI;
+const uri =process.env.MONGO_URI;
 const nameOfDatabase=process.env.DB_NAME;
 const catalogCollection=process.env.CATALOG_COLLECTION;
 const stockCollection=process.env.STOCK_COLLECTION;
@@ -32,7 +33,7 @@ async function main(){
         //Add Listings
         //Generate SKU Id for new item
         varId = await generateSKU(client)
-        console.log(varId)
+
         await createItem(client, {
             _id: varId,
             name: varName,
@@ -41,18 +42,29 @@ async function main(){
             price: varPrice
         }, {
             _id: varId,
-            stock: 0
+            stock: 3,
+            batchCount: 0
         })
-
+        
         //Remove any item given an id
         await removeItem(client, "43PVLBIA")
 
         //Get the stock of specific Item of Id
         await getStock(client, 0)
+        
 
-        //Update the stock of Specific item of Id, by value x, true if overwrite, false if additive
-        await updateStock(client, 0, 4, true)
-         */
+        //Create a new batch with a new batch Id
+        varBatchId= await generateBatchId(client)
+        await addBatch(client, "GWO7PTM9", 4, varBatchId)
+        
+
+        //Remove a batch knowing its batch id
+        await removeBatch(client, 323413363648)
+
+        await batchStock(client, "015987121978", -2)
+        */
+        //query function
+        await queryFromString(client, "GW")
 
     } catch (e) {
         console.error(e);
@@ -63,8 +75,24 @@ async function main(){
 
 //Create a new item in the catalog
 async function createItem(client, newCatalog, newStock){
+    newName=newCatalog.name
+    contains=await client.db(nameOfDatabase).collection(catalogCollection).findOne({name: newName})
+    
+    if (contains){
+        SKU=contains._id
+        varBatchId= await generateBatchId(client)
+        await addBatch(client, SKU, newStock.stock, varBatchId)
+        return
+    }
+
     const result=await client.db(nameOfDatabase).collection(catalogCollection).insertOne(newCatalog)
     await client.db(nameOfDatabase).collection(stockCollection).insertOne(newStock)
+
+    if (newStock.stock !=0){
+        await client.db(nameOfDatabase).collection(stockCollection).updateOne({stock: newStock.stock}, {$set: {stock: 0}})
+        varBatchId= await generateBatchId(client)
+        await addBatch(client, newCatalog._id, newStock.stock, varBatchId)
+    }
 
     console.log(`New Listing made with id of: ${result.insertedId}`)
 }
@@ -76,7 +104,7 @@ async function removeItem(client, removeCatalog){
 }
 
 
-//get the stock of an item given the id
+//get the total stock of an item given the id
 async function getStock(client, id){
     stock= await client.db(nameOfDatabase).collection(stockCollection).findOne({_id: id})
     if (stock){
@@ -89,14 +117,48 @@ async function getStock(client, id){
     }
 }
 
-//Update the stock of an item given the id
-async function updateStock(client, id, newStock, overwrite){
-    if (overwrite){
-        stock= await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: id},{$set: {stock: newStock}})
+//Add a batch given the stock of batch, SKU of item, and batch id
+async function addBatch(client, SKU, newStock, id){
+    item= await client.db(nameOfDatabase).collection(stockCollection).findOne({_id: SKU})
+    await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: SKU},{$set: {stock: newStock+item.stock}})
+    batchCount=item.batchCount+1
+    await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: SKU},{$set: {batchCount: batchCount}})
+
+    batch={
+        _id: id,
+        stock: newStock
     }
-    else{
-        stock= await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: id},{$set: {stock: newStock+stock.stock}})
-    }
+
+    await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: SKU},{$set: {batch: batch}})
+
+    await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: SKU},{$rename: {batch: "batch".concat(id)}})
+}
+
+//Remove a batch given the batch id
+async function removeBatch(client, id){
+    batch="batch".concat(String(id))
+
+    item=await client.db(nameOfDatabase).collection(stockCollection).findOne({[batch]: {$exists: true}})
+
+    //Update stock value and batch count value
+    await client.db(nameOfDatabase).collection(stockCollection).updateOne({[batch]: {$exists: true}}, {$set: {stock: item.stock-item[batch].stock}})
+    await client.db(nameOfDatabase).collection(stockCollection).updateOne({[batch]: {$exists: true}}, {$set: {batchCount: item.batchCount-1}})
+
+    await client.db(nameOfDatabase).collection(stockCollection).updateOne({}, {$unset: {[batch]: ""}})
+}
+
+//Take some stock away or increase stock in anyt given batch given batch id, and stock change
+async function batchStock(client, id, stockChange){
+    batch="batch".concat(String(id))
+
+    item=await client.db(nameOfDatabase).collection(stockCollection).findOne({[batch]: {$exists: true}})
+
+    await client.db(nameOfDatabase).collection(stockCollection).updateOne({[batch]: {$exists: true}}, {$set: {[batch]: {
+        _id: id,
+        stock: item[batch].stock-stockChange
+    }}})
+    await client.db(nameOfDatabase).collection(stockCollection).updateOne({[batch]: {$exists: true}}, {$set: {stock: item.stock-stockChange}})
+
 }
 
 async function exportToCSV(client, file_path) {
@@ -127,13 +189,13 @@ async function exportToCSV(client, file_path) {
     });
 }
 
+//Create a unique SKU value
 async function generateSKU(client) {
     let SKU = ""
     while (true) {
         SKU = ""
         for (i = 0; i < 8; i++) {
             rand = Math.floor(Math.random() * 36)
-            console.log(String(rand))
             if (rand < 10) {
                 SKU = SKU.concat(String(rand))
             } else {
@@ -141,12 +203,35 @@ async function generateSKU(client) {
                 SKU = SKU.concat(String.fromCharCode(rand))
             }
         }
+        //Make sure it isn't a duplicate
         contains = await client.db(nameOfDatabase).collection(stockCollection).findOne({_id: SKU})
         if (!contains) {
             break
         }
     }
     return SKU
+}
+
+//Create a unique batch id
+async function generateBatchId(client) {
+    let id = ""
+    while (true) {
+        id = ""
+        for (i = 0; i < 12; i++) {
+            rand = Math.floor(Math.random() * 10)
+            id = id.concat(String(rand))
+        }
+        //Make sure it isn't a duplicate
+        batch="batch".concat(String(id))
+        contains=await client.db(nameOfDatabase).collection(stockCollection).find({ [batch]: { $exists: true } }).toArray()
+        if (contains.length==0) {
+            break
+        }
+        else{
+            console.log("Error")
+        }
+    }
+    return id
 }
 
 async function importFromCSV(client, file_path) {
@@ -171,6 +256,29 @@ async function importFromCSV(client, file_path) {
         converted_stock['stock'] = item.stock;
         await createItem(client, converted_catalog, converted_stock);
     }
+}
+
+//Return an array of any item that matches the substring given. Checks name and id. Array includes items name and total stock level
+async function queryFromString(client, queryString){
+
+    //A list of everything in the catalog
+    list=await client.db(nameOfDatabase).collection(catalogCollection).find({ _id: { $exists: true } }).toArray()
+
+    //remove anything that doesn't contain the substring
+    for (i=0; i<list.length;i++){
+        if (!(list[i].name.includes(queryString) || (list[i]._id.includes(queryString)) || list[i].category.includes(queryString))){
+            list.splice(i,1)
+            i--
+        }
+    }
+
+    //add in the total stock
+    for (i=0; i<list.length;i++){
+        stock=await client.db(nameOfDatabase).collection(stockCollection).findOne({_id: list[i]._id})
+        list[i].stock=stock.stock;
+    }
+
+    console.log(list)
 }
 
 main()
