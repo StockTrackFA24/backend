@@ -1,5 +1,6 @@
 const {MongoClient} = require('mongodb');
 
+/*
 let converter = require('json-2-csv');
 const fs = require('fs');
 const {json2csv} = require("json-2-csv");
@@ -9,9 +10,24 @@ const uri =process.env.MONGO_URI;
 const nameOfDatabase=process.env.DB_NAME;
 const catalogCollection=process.env.CATALOG_COLLECTION;
 const stockCollection=process.env.STOCK_COLLECTION;
+*/
+
+//Chris's Work List
+//Query a list of batches either by item or by batch number.  ***NEW FUNCTION
+//Edit an existing batch
+//Creating a batch    ***EDIT FUNCTION DUE TO batch# VALUE
+//Creating a new item    ***EDIT FUNCTION DUE TO SKU VALUE
+//Removing a batch
+//Removing an item
+
+//Then
+//Work on audit logs, audit everything
+//audit log is new collection in database
+//log had timestamp, user, and description
+//functions for viewing audit logs sort from newest to oldest.
 
 async function main(){
-    /**
+    /** 
      * Connection URI. Update <username>, <password>, and <your-cluster-url> to reflect your cluster.
      * See https://docs.mongodb.com/ecosystem/drivers/node/ for more details
      */
@@ -62,9 +78,10 @@ async function main(){
         await removeBatch(client, 323413363648)
 
         await batchStock(client, "015987121978", -2)
-        */
+        
         //query function
         await queryFromString(client, "GW")
+        */
 
     } catch (e) {
         console.error(e);
@@ -72,6 +89,7 @@ async function main(){
         await client.close();
     }
 }
+
 
 //Create a new item in the catalog
 async function createItem(client, newCatalog, newStock){
@@ -258,27 +276,39 @@ async function importFromCSV(client, file_path) {
     }
 }
 
-//Return an array of any item that matches the substring given. Checks name and id. Array includes items name and total stock level
-async function queryFromString(client, queryString){
+//Return an array of any item that matches the substring given. Checks name and id, and category. Array includes items name and total stock level
+async function queryFromString( queryString){
 
-    //A list of everything in the catalog
-    list=await client.db(nameOfDatabase).collection(catalogCollection).find({ _id: { $exists: true } }).toArray()
+    const client = new MongoClient(uri);
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect();
+        //console.log("We got connected")
+        //A list of everything in the catalog
+        list=await client.db(nameOfDatabase).collection(catalogCollection).find({ _id: { $exists: true } }).toArray()
 
-    //remove anything that doesn't contain the substring
-    for (i=0; i<list.length;i++){
-        if (!(list[i].name.includes(queryString) || (list[i]._id.includes(queryString)) || list[i].category.includes(queryString))){
-            list.splice(i,1)
-            i--
+        //remove anything that doesn't contain the substring
+        for (i=0; i<list.length;i++){
+            if (!(list[i].name.includes(queryString) || (list[i]._id.includes(queryString)) || list[i].category.includes(queryString))){
+                list.splice(i,1)
+                i--
+            }
         }
-    }
 
-    //add in the total stock
-    for (i=0; i<list.length;i++){
-        stock=await client.db(nameOfDatabase).collection(stockCollection).findOne({_id: list[i]._id})
-        list[i].stock=stock.stock;
-    }
+        //add in the total stock
+        for (i=0; i<list.length;i++){
+            stock=await client.db(nameOfDatabase).collection(stockCollection).findOne({_id: list[i]._id})
+            list[i].stock=stock.stock;
+        }
 
-    console.log(list)
+        return list
+    } catch (e) {
+        console.error(e);
+    } finally {
+        await client.close();
+    }
 }
 
-main()
+module.exports={queryFromString};
+
+//main()
