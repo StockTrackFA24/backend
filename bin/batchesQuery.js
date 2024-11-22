@@ -8,10 +8,10 @@ async function wait(){
 
   app.get('/', async (req, res) => {
     /*  Working when recieving json value for req that we need to search
-    example is {_id: doesn't matter, name: Helmet}
+    example is {_id: doesn't matter, sub: Helmet}
     batches=await queryForBatches(req.name)
     */
-    batches= await queryForBatches({_id: 1,name: "Chestplate"})
+    batches= await queryForBatches({_id: 1,sub: "R"})
     res.send(batches)
   })
   

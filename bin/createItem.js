@@ -21,7 +21,7 @@ async function wait(){
     */
     item= await createItem({
         _id: "SSSSSSSS",
-        name: "Boots",
+        name: "Books",
         description: "A piece of Armor",
         category: "Armor",
         price: 100,

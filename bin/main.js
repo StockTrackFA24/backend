@@ -12,6 +12,7 @@ const catalogCollection=process.env.CATALOG_COLLECTION;
 const stockCollection=process.env.STOCK_COLLECTION;
 */
 
+
 //Chris's Work List
 
 //Then
@@ -75,7 +76,7 @@ async function main(){
         //query function
         await queryFromString(client, "GW")
 
-        await queryForBatches(client, "Chestplate")
+        await queryForBatches("R")
         */
 
     } catch (e) {
@@ -108,8 +109,10 @@ async function createItem(newCatalog){
         contains=await client.db(nameOfDatabase).collection(catalogCollection).findOne({name: newName})
         if (contains){
             SKU=contains._id
-            varBatchId= await generateBatchId(client)
-            await createBatch(client, SKU, newStock.stock, varBatchId)
+            await createBatch({
+                name: newName,
+                stock: newStock.stock
+            })
             return
         }
 
@@ -118,8 +121,10 @@ async function createItem(newCatalog){
 
         if (newStock.stock !=0){
             await client.db(nameOfDatabase).collection(stockCollection).updateOne({stock: newStock.stock}, {$set: {stock: 0}})
-            varBatchId= await generateBatchId(client)
-            await createBatch(client, newCatalog._id, newStock.stock, varBatchId)
+            await createBatch({
+                name: newName,
+                stock: newStock.stock
+            })
         }
 
         console.log(`New Listing made with id of: ${result.insertedId}`)
@@ -393,22 +398,42 @@ async function queryFromString(queryString){
     }
 }
 
-//Returns all batches associated with a specific item by name
-async function queryForBatches(name){
+//Returns all batches associated with a substr tied to either name or SKU
+async function queryForBatches(subString){
     const client = new MongoClient(uri);
     try {
         // Connect to the MongoDB cluster
         await client.connect();
 
-        itemName=name.name
+        substr=subString.sub
 
-        item=await client.db(nameOfDatabase).collection(catalogCollection).findOne({name: itemName})
-        SKU=item._id
-        batches=await client.db(nameOfDatabase).collection(stockCollection).findOne({_id: SKU})
-        delete batches._id
-        delete batches.stock
-        delete batches.batchCount
-        return batches
+        list=await client.db(nameOfDatabase).collection(catalogCollection).find({ _id: { $exists: true } }).toArray()
+
+        //remove anything that doesn't contain the substring
+        for (i=0; i<list.length;i++){
+            if (!(list[i].name.includes(substr) || list[i]._id.includes(substr))){
+                list.splice(i,1)
+                i--
+            }
+        }
+
+        allBatches=[]
+        for (i=0; i<list.length;i++){
+            SKU=list[i]._id
+            itemName=list[i].name
+            batches=await client.db(nameOfDatabase).collection(stockCollection).findOne({_id: SKU})
+            delete batches._id
+            delete batches.stock
+            delete batches.batchCount
+            allEntries=Object.entries(batches)
+            for (x=0; x<allEntries.length;x++){
+                batch=allEntries[x][1]
+                batch.name=itemName
+                batch.SKU=SKU
+                allBatches.push(batch)
+            }
+        }
+        return allBatches
     } catch (e) {
         console.error(e);
     } finally {

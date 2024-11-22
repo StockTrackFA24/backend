@@ -11,7 +11,7 @@ async function wait(){
     example is {_id: doesn't matter, sub: "Arm"}
     list= await queryFromString(req.sub)
     */
-    list= await queryFromString("Helm")
+    list= await queryFromString("Arm")
     res.send(list)
   })
   
