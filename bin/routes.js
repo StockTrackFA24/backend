@@ -2,11 +2,13 @@ const express = require('express')
 const app = express()
 const port = 4000
 
+app.use(express.json())
+
 const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches} = require('./main.js')
 
 async function wait(){
 
-  app.get('/createItem', async (req, res) => {
+  app.post('/createItem', async (req, res) => {
     /*  Working when recieving json value for req that we need to create
     example is 
     {
@@ -17,29 +19,30 @@ async function wait(){
         price: varPrice,
         stock: varStock
     }
-    list= await createItem(req.sub)
     */
-    item= await createItem({
-        _id: "SSSSSSSS",
-        name: "Helmet",
-        description: "A piece of Armor",
-        category: "Armor",
-        price: 100,
-        stock: 3
-    })
-    res.send("Item Created")
+    let itemAttributes = {
+      name : req.body.name,
+      description : req.body.description,
+      category: req.body.category,
+      price: req.body.price,
+      stock: req.body.stock,
+    };
+    await createItem(itemAttributes);
+
+    res.send("Item Created");
   })
 
-  app.get('/removeItem', async (req, res) => {
+  app.post('/removeItem', async (req, res) => {
     /*  Working when recieving json value for req that we need to search
     example is {_id: doesn't matter, name: "Helment"}
     list= await removeItem(req.name)
     */
-    list= await removeItem("Helmet")
+    let itemName = req.body.name;
+    list= await removeItem(itemName)
     res.send("Item deleted")
   })
 
-  app.get('/createBatch', async (req, res) => {
+  app.post('/createBatch', async (req, res) => {
     /*  Working when recieving json value for req that we need to search
     example is {
     _id: doesn't matter,
@@ -48,47 +51,53 @@ async function wait(){
     }
     await queryFromString(req.sub)
     */
-    await createBatch({
-    _id: "SSSSSSSS",
-    name: "Chestplate",
-    stock: 3
-    })
+    let batchAttributes = {
+      name: req.body.name,
+      stock: req.body.stock,
+    }
+
+    await createBatch(batchAttributes)
     res.send("Batch added")
   })
 
-  app.get('/removeBatch', async (req, res) => {
+  app.post('/removeBatch', async (req, res) => {
     /*  Working when recieving json value for req that we need to search
     {_id: "123456789012"}   id=batchId you want to remove
     await removeBatch(req.sub)
     */
-    await removeBatch({_id: "612203935449"})
+    let batchID = req.body._id;
+    await removeBatch({_id: batchID})
     res.send("Removed a batch")
   })
 
-  app.get('/batchStock', async (req, res) => {
+  app.post('/batchStock', async (req, res) => {
     /*  Working when recieving json value for req that we need to search
     example is {_id: "123456789012", stock: 3}   batchID and stock decrease. If you want to increase put negative stock
     await batchStock(req.sub)
     */
-    list= await batchStock({_id: "612203935449", stock: 1})
+    let batchID = req.body._id;
+    let increment = req.body.stock;
+    list= await batchStock({_id: batchID, stock: increment});
     res.send("Edited the batch's stock")
   })
 
-  app.get('/standardQuery', async (req, res) => {
+  app.post('/standardQuery', async (req, res) => {
     /*  Working when recieving json value for req that we need to search
     example is {_id: doesn't matter, sub: "Arm"}
     list= await queryFromString(req.sub)
     */
-    list= await queryFromString("Boo")
+    let query = req.body["sub"];
+    list= await queryFromString(query)
     res.send(list)
   })
 
-  app.get('/batchesQuery', async (req, res) => {
+  app.post('/batchesQuery', async (req, res) => {
     /*  Working when recieving json value for req that we need to search
     example is {_id: doesn't matter, sub: Helmet}
     batches=await queryForBatches(req.name)
     */
-    batches= await queryForBatches({_id: 1,sub: "R"})
+    let query = req.body["sub"];
+    batches= await queryForBatches({sub: query})
     res.send(batches)
   })
   
