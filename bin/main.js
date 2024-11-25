@@ -1,6 +1,6 @@
 const {MongoClient} = require('mongodb');
 
-/*
+
 let converter = require('json-2-csv');
 const fs = require('fs');
 const {json2csv} = require("json-2-csv");
@@ -10,7 +10,7 @@ const uri =process.env.MONGO_URI;
 const nameOfDatabase=process.env.DB_NAME;
 const catalogCollection=process.env.CATALOG_COLLECTION;
 const stockCollection=process.env.STOCK_COLLECTION;
-*/
+
 
 
 //Chris's Work List
