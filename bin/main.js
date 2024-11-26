@@ -1,6 +1,5 @@
 const {MongoClient} = require('mongodb');
 
-
 let converter = require('json-2-csv');
 const fs = require('fs');
 const {json2csv} = require("json-2-csv");
@@ -79,6 +78,8 @@ async function main(){
         await queryForBatches("R")
         */
 
+        await removeBatch({_id: "550509199754"})
+
     } catch (e) {
         console.error(e);
     } finally {
@@ -120,7 +121,7 @@ async function createItem(newCatalog){
         await client.db(nameOfDatabase).collection(stockCollection).insertOne(newStock)
 
         if (newStock.stock !=0){
-            await client.db(nameOfDatabase).collection(stockCollection).updateOne({stock: newStock.stock}, {$set: {stock: 0}})
+            await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: id}, {$set: {stock: 0}})
             await createBatch({
                 name: newName,
                 stock: newStock.stock
@@ -215,7 +216,7 @@ async function removeBatch(batchId){
         await client.db(nameOfDatabase).collection(stockCollection).updateOne({[batch]: {$exists: true}}, {$set: {stock: item.stock-item[batch].stock}})
         await client.db(nameOfDatabase).collection(stockCollection).updateOne({[batch]: {$exists: true}}, {$set: {batchCount: item.batchCount-1}})
 
-        await client.db(nameOfDatabase).collection(stockCollection).updateOne({}, {$unset: {[batch]: ""}})
+        await client.db(nameOfDatabase).collection(stockCollection).updateOne({[batch]: {$exists: true}}, {$unset: {[batch]: ""}})
     } catch (e) {
         console.error(e);
     } finally {
