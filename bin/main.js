@@ -261,8 +261,6 @@ async function exportToCSV() {
     stockList = await stockCursor.toArray();
     catalogList.sort((a,b) => a._id > b._id ? 1 : -1)
     stockList.sort((a,b) => a._id > b._id ? 1 : -1)
-    console.log(catalogList);
-    console.log(stockList);
     let numItems = catalogList.length
     // This has the assumption that each item in the catalog will have a corresponding item in stock
     for (let i=0; i<numItems; i++){
