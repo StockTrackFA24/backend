@@ -251,7 +251,8 @@ async function batchStock(editBatch){
 
 }
 
-async function exportToCSV(client, file_path) {
+async function exportToCSV() {
+    const client = new MongoClient(uri);
     let catalogList = []
     let stockList = []
     let catalogCursor = await client.db(nameOfDatabase).collection(catalogCollection).find({})
@@ -262,12 +263,13 @@ async function exportToCSV(client, file_path) {
     stockList.sort((a,b) => a._id > b._id ? 1 : -1)
     console.log(catalogList);
     console.log(stockList);
-    numItems = catalogList.length
+    let numItems = catalogList.length
     // This has the assumption that each item in the catalog will have a corresponding item in stock
     for (let i=0; i<numItems; i++){
         catalogList[i].stock =stockList[i].stock
     }
-    csvString = json2csv(catalogList);
+    return json2csv(catalogList);
+    /*
     console.log(csvString);
     fs.writeFile(file_path, csvString, err => {
         if (err) {
@@ -276,7 +278,10 @@ async function exportToCSV(client, file_path) {
         else {
             console.log(`CSV output written to ${file_path}`);
         }
+
+
     });
+     */
 }
 
 //Create a unique SKU value
@@ -442,6 +447,6 @@ async function queryForBatches(subString){
     }
 }
 
-module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches};
+module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV};
 
 //main()
