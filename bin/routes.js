@@ -20,6 +20,7 @@ async function wait(){
         stock: varStock
     }
     */
+
     let itemAttributes = {
       name : req.body.name,
       description : req.body.description,
@@ -27,9 +28,10 @@ async function wait(){
       price: req.body.price,
       stock: req.body.stock,
     };
-    await createItem(itemAttributes);
+    output=await createItem(itemAttributes);
 
-    res.send("Item Created");
+    res.send(output);
+
   })
 
   app.post('/removeItem', async (req, res) => {
@@ -38,8 +40,8 @@ async function wait(){
     list= await removeItem(req.name)
     */
     let itemName = req.body.name;
-    list= await removeItem(itemName)
-    res.send("Item deleted")
+    output= await removeItem(itemName)
+    res.send(output)
   })
 
   app.post('/createBatch', async (req, res) => {
@@ -56,8 +58,8 @@ async function wait(){
       stock: req.body.stock,
     }
 
-    await createBatch(batchAttributes)
-    res.send("Batch added")
+    output=await createBatch(batchAttributes)
+    res.send(output)
   })
 
   app.post('/removeBatch', async (req, res) => {
@@ -66,10 +68,11 @@ async function wait(){
     await removeBatch(req.sub)
     */
     let batchID = req.body._id;
-    await removeBatch({_id: batchID})
-    res.send("Removed a batch")
+    output=await removeBatch({_id: batchID})
+    res.send(output)
   })
 
+  //Add more error checking for if batch goes to or below 0
   app.post('/batchStock', async (req, res) => {
     /*  Working when recieving json value for req that we need to search
     example is {_id: "123456789012", stock: 3}   batchID and stock decrease. If you want to increase put negative stock
@@ -77,8 +80,8 @@ async function wait(){
     */
     let batchID = req.body._id;
     let increment = req.body.stock;
-    list= await batchStock({_id: batchID, stock: increment});
-    res.send("Edited the batch's stock")
+    output= await batchStock({_id: batchID, stock: increment});
+    res.send(output)
   })
 
   app.post('/standardQuery', async (req, res) => {
