@@ -4,7 +4,7 @@ const port = 4000
 
 app.use(express.json())
 
-const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches, exportToCSV} = require('./main.js')
+const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches, exportToCSV, createRole} = require('./main.js')
 
 async function wait(){
 
@@ -102,8 +102,16 @@ async function wait(){
   })
 
   app.post('/exportItems', async (req, res) => {
-    let csvstring = await(exportToCSV())
-    res.send(csvstring)
+    let csvstring = await(exportToCSV());
+    res.send(csvstring);
+  })
+
+  app.post('/createRole', async (req, res) => {
+    console.log("test")
+    // Read json pass from frontend at req.body
+    // res.send(feedback, i.e. succsefuklt, role already exists)
+    response = await(createRole(req.body));
+    res.send(response);
   })
   
   app.listen(port, () => {

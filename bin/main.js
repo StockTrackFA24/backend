@@ -9,6 +9,8 @@ const uri =process.env.MONGO_URI;
 const nameOfDatabase=process.env.DB_NAME;
 const catalogCollection=process.env.CATALOG_COLLECTION;
 const stockCollection=process.env.STOCK_COLLECTION;
+const roleCollection=process.env.ROLE_COLLECTION;
+const userCollection=process.env.USER_COLLECTION;
 
 
 
@@ -445,6 +447,33 @@ async function queryForBatches(subString){
     }
 }
 
-module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV};
+async function createRole(roleInfo) {
+    const client = new MongoClient(uri);
+    //let result;
+
+    try {
+        await client.connect();
+
+
+        //if (await client.db(nameOfDatabase).collection(roleCollection).findOne( { name: roleInfo.name } )) {
+            //throw new TypeError("Role with name " + roleInfo.name + " already exists");
+            console.log("hi")
+        //}
+
+       // if (await client.db(nameOfDatabase).collection(roleCollection).findOne( { displayName: roleInfo.displayName } )) {
+            //throw new TypeError("Role with display name " + roleInfo.name + " already exists");
+            console.log("bye")
+       // }
+
+        /*const result=*/ await client.db(nameOfDatabase).collection(roleCollection).insertOne(roleInfo);
+
+    } catch(e) {
+        console.error(e);
+    } finally {
+        await client.close();
+    }
+}
+
+module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, createRole};
 
 //main()
