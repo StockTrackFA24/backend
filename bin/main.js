@@ -207,8 +207,8 @@ async function createBatch(newBatch){
         }
         SKU=catalogItem._id
         stockItem=await client.db(nameOfDatabase).collection(stockCollection).findOne({_id: SKU})
-        await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: SKU},{$set: {stock: newStock+stockItem.stock}})
-        batchCount=stockItem.batchCount+1
+        await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: SKU},{$set: {stock: Number(newStock) + Number(stockItem.stock)}})
+        batchCount= Number(stockItem.batchCount) + 1
         await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: SKU},{$set: {batchCount: batchCount}})
 
         id=await generateBatchId();
