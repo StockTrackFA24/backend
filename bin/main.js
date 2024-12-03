@@ -1,6 +1,5 @@
 const {MongoClient} = require('mongodb');
 
-
 let converter = require('json-2-csv');
 const fs = require('fs');
 const {json2csv} = require("json-2-csv");
@@ -534,7 +533,9 @@ async function itemUpdate(newItem){
         }
         contains=await client.db(nameOfDatabase).collection(catalogCollection).findOne({name: newItem.name})
         if (contains){
-            return "Error: Item name already exists."
+            if (contains._id!=newItem._id){
+                return "Error: Item name already exists."
+            }
         }
 
         if (typeof newItem.name != "undefined"){

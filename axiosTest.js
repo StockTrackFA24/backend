@@ -131,8 +131,8 @@ axios.post('http://localhost:4000/removeBatch',  data={
 
 axios.post('http://localhost:4000/itemUpdate',  data={
   _id: "F9BNVSVD",
-  name: "Test01234",
-  description: 'This is a test to ensure routes are.',
+  name: "Test01",
+  description: 'This is a test to ensure routes.',
   category: 'Place',
   price: 50,
 },
