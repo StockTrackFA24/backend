@@ -4,7 +4,7 @@ const port = 4000
 
 app.use(express.json())
 
-const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches, exportToCSV} = require('./main.js')
+const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches, exportToCSV, itemUpdate} = require('./main.js')
 
 async function wait(){
 
@@ -106,6 +106,20 @@ async function wait(){
     let query = req.body["sub"];
     batches= await queryForBatches({sub: query})
     res.send(batches)
+  })
+
+  app.post('/itemUpdate', async (req, res) => {
+    let itemAttributes = {
+      _id : req.body._id,
+      name : req.body.name,
+      description : req.body.description,
+      category: req.body.category,
+      price: req.body.price,
+    };
+    output=await itemUpdate(itemAttributes);
+
+    res.send(output);
+
   })
 
   app.post('/exportItems', async (req, res) => {

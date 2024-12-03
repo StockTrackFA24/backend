@@ -11,11 +11,8 @@ const nameOfDatabase=process.env.DB_NAME;
 const catalogCollection=process.env.CATALOG_COLLECTION;
 const stockCollection=process.env.STOCK_COLLECTION;
 
-
-
 //Chris's Work List
 
-//Then
 //Work on audit logs, audit everything
 //audit log is new collection in database
 //log had timestamp, user, and description
@@ -525,6 +522,42 @@ async function queryForBatches(subString){
     }
 }
 
-module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV};
+async function itemUpdate(newItem){
+    const client = new MongoClient(uri);
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect();
+
+        contains=await client.db(nameOfDatabase).collection(catalogCollection).findOne({_id: newItem._id})
+        if (!contains){
+            return "Error: SKU not found."
+        }
+        contains=await client.db(nameOfDatabase).collection(catalogCollection).findOne({name: newItem.name})
+        if (contains){
+            return "Error: Item name already exists."
+        }
+
+        if (typeof newItem.name != "undefined"){
+            await client.db(nameOfDatabase).collection(catalogCollection).updateOne({_id: newItem._id}, {$set: {name: newItem.name}})
+        }
+        if (typeof newItem.category != "undefined"){
+            await client.db(nameOfDatabase).collection(catalogCollection).updateOne({_id: newItem._id}, {$set: {category: newItem.category}})
+        }
+        if (typeof newItem.description != "undefined"){
+            await client.db(nameOfDatabase).collection(catalogCollection).updateOne({_id: newItem._id}, {$set: {description: newItem.description}})
+        }
+        if (typeof newItem.price != "undefined"){
+            await client.db(nameOfDatabase).collection(catalogCollection).updateOne({_id: newItem._id}, {$set: {price: newItem.price}})
+        }
+
+        return `Updated Listing with id of: ${newItem._id}`
+    } catch (e) {
+        console.error(e);
+    } finally {
+        await client.close();
+    }
+}
+
+module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate};
 
 //main()
