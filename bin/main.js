@@ -1,5 +1,6 @@
 const {MongoClient} = require('mongodb');
 
+
 let converter = require('json-2-csv');
 const fs = require('fs');
 const {json2csv} = require("json-2-csv");
@@ -9,6 +10,7 @@ const uri =process.env.MONGO_URI;
 const nameOfDatabase=process.env.DB_NAME;
 const catalogCollection=process.env.CATALOG_COLLECTION;
 const stockCollection=process.env.STOCK_COLLECTION;
+
 
 
 //Chris's Work List
@@ -157,12 +159,17 @@ async function removeItem(removeCatalog){
     try {
         // Connect to the MongoDB cluster
         await client.connect();
-        deleting=await client.db(nameOfDatabase).collection(catalogCollection).findOne({name: removeCatalog})
+        if (removeCatalog.name !=null ){
+            deleting=await client.db(nameOfDatabase).collection(catalogCollection).findOne({name: removeCatalog.name})
+        }
+        else{
+            deleting=await client.db(nameOfDatabase).collection(catalogCollection).findOne({_id: removeCatalog._id})
+        }
         if (deleting == null){
-            return "Error: Name does not exist"
+            return "Error: Name or ID does not exist"
         }
         itemName=deleting.name
-        await client.db(nameOfDatabase).collection(catalogCollection).deleteOne({name: removeCatalog})
+        await client.db(nameOfDatabase).collection(catalogCollection).deleteOne({name: itemName})
         id=deleting._id
         await client.db(nameOfDatabase).collection(stockCollection).deleteOne({_id: id})
         return `Deleted item: ${itemName}`

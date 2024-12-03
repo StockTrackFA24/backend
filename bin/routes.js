@@ -39,8 +39,12 @@ async function wait(){
     example is {_id: doesn't matter, name: "Helment"}
     list= await removeItem(req.name)
     */
-    let itemName = req.body.name;
-    output= await removeItem(itemName)
+
+    let item = {
+      name: req.body.name,
+      _id: req.body._id
+    }
+    output= await removeItem(item)
     res.send(output)
   })
 
