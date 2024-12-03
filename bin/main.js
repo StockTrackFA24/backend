@@ -1,5 +1,6 @@
 const {MongoClient} = require('mongodb');
 
+
 let converter = require('json-2-csv');
 const fs = require('fs');
 const {json2csv} = require("json-2-csv");
@@ -93,6 +94,22 @@ async function main(){
 //Create a new item in the catalog
 async function createItem(newCatalog){
 
+    if (typeof newCatalog.name == "undefined"){
+        return "Error: Item had no name."
+    }
+    else  if (typeof newCatalog.description == "undefined"){
+        return "Error: Item had no description."
+    }
+    else  if (typeof newCatalog.category == "undefined"){
+        return "Error: Item had no category."
+    }
+    else  if (typeof newCatalog.price == "undefined"){
+        return "Error: Item had no price."
+    }
+    else  if (typeof newCatalog.stock == "undefined"){
+        return "Error: Item had no stock."
+    }
+
     id=await generateSKU()
 
     const client = new MongoClient(uri);
@@ -116,7 +133,7 @@ async function createItem(newCatalog){
                 name: newName,
                 stock: newStock.stock
             })
-            return
+            return "Item already existed, so new batch created instead"
         }
 
         const result=await client.db(nameOfDatabase).collection(catalogCollection).insertOne(newCatalog)
@@ -130,7 +147,7 @@ async function createItem(newCatalog){
             })
         }
 
-        console.log(`New Listing made with id of: ${result.insertedId}`)
+        return `New Listing made with id of: ${result.insertedId}`
     } catch (e) {
         console.error(e);
     } finally {
@@ -144,10 +161,20 @@ async function removeItem(removeCatalog){
     try {
         // Connect to the MongoDB cluster
         await client.connect();
-        deleting=await client.db(nameOfDatabase).collection(catalogCollection).findOne({name: removeCatalog})
-        await client.db(nameOfDatabase).collection(catalogCollection).deleteOne({name: removeCatalog})
+        if (removeCatalog.name !=null ){
+            deleting=await client.db(nameOfDatabase).collection(catalogCollection).findOne({name: removeCatalog.name})
+        }
+        else{
+            deleting=await client.db(nameOfDatabase).collection(catalogCollection).findOne({_id: removeCatalog._id})
+        }
+        if (deleting == null){
+            return "Error: Name or ID does not exist"
+        }
+        itemName=deleting.name
+        await client.db(nameOfDatabase).collection(catalogCollection).deleteOne({name: itemName})
         id=deleting._id
         await client.db(nameOfDatabase).collection(stockCollection).deleteOne({_id: id})
+        return `Deleted item: ${itemName}`
     } catch (e) {
         console.error(e);
     } finally {
@@ -171,6 +198,12 @@ async function getStock(client, id){
 
 //Add a batch given the stock of batch, name of item
 async function createBatch(newBatch){
+    if (typeof newBatch.name == "undefined"){
+        return "Error: Need an item name."
+    }
+    else  if (typeof newBatch.stock == "undefined"){
+        return "Error: Batch had no stock."
+    }
     const client = new MongoClient(uri);
     try {
         // Connect to the MongoDB cluster
@@ -178,10 +211,13 @@ async function createBatch(newBatch){
         itemName=newBatch.name
         newStock=newBatch.stock
         catalogItem= await client.db(nameOfDatabase).collection(catalogCollection).findOne({name: itemName})
+        if (catalogItem == null){
+            return "Error: Item name does not exist"
+        }
         SKU=catalogItem._id
         stockItem=await client.db(nameOfDatabase).collection(stockCollection).findOne({_id: SKU})
-        await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: SKU},{$set: {stock: newStock+stockItem.stock}})
-        batchCount=stockItem.batchCount+1
+        await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: SKU},{$set: {stock: Number(newStock) + Number(stockItem.stock)}})
+        batchCount= Number(stockItem.batchCount) + 1
         await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: SKU},{$set: {batchCount: batchCount}})
 
         id=await generateBatchId();
@@ -194,6 +230,8 @@ async function createBatch(newBatch){
         await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: SKU},{$set: {batch: batch}})
 
         await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: SKU},{$rename: {batch: "batch".concat(id)}})
+
+        return `New batch created with id: ${id}`
     } catch (e) {
         console.error(e);
     } finally {
@@ -203,6 +241,9 @@ async function createBatch(newBatch){
 
 //Remove a batch given the batch id
 async function removeBatch(batchId){
+    if (typeof batchId._id == "undefined"){
+        return "Error: Need a batch id."
+    }
     const client = new MongoClient(uri);
     try {
         // Connect to the MongoDB cluster
@@ -213,12 +254,24 @@ async function removeBatch(batchId){
         batch="batch".concat(String(id))
 
         item=await client.db(nameOfDatabase).collection(stockCollection).findOne({[batch]: {$exists: true}})
+        if (item == null){
+            return "Error: Batch ID does not exist"
+        }
 
         //Update stock value and batch count value
         await client.db(nameOfDatabase).collection(stockCollection).updateOne({[batch]: {$exists: true}}, {$set: {stock: item.stock-item[batch].stock}})
         await client.db(nameOfDatabase).collection(stockCollection).updateOne({[batch]: {$exists: true}}, {$set: {batchCount: item.batchCount-1}})
 
         await client.db(nameOfDatabase).collection(stockCollection).updateOne({[batch]: {$exists: true}}, {$unset: {[batch]: ""}})
+
+        if (item.batchCount==1){
+            SKU=item._id
+            remove=await client.db(nameOfDatabase).collection(catalogCollection).findOne({_id: SKU})
+            await removeItem(remove.name)
+            return "Item was removed due to final batch being removed"
+        }
+
+        return `${batch} was removed.`
     } catch (e) {
         console.error(e);
     } finally {
@@ -228,6 +281,12 @@ async function removeBatch(batchId){
 
 //Take some stock away or increase stock in anyt given batch given batch id, and stock change
 async function batchStock(editBatch){
+    if (typeof editBatch._id == "undefined"){
+        return "Error: Need a batch id."
+    }
+    else  if (typeof editBatch.stock == "undefined"){
+        return "Error: Need stock alteration."
+    }
     const client = new MongoClient(uri);
     try {
         // Connect to the MongoDB cluster
@@ -239,12 +298,33 @@ async function batchStock(editBatch){
         batch="batch".concat(String(id))
 
         item=await client.db(nameOfDatabase).collection(stockCollection).findOne({[batch]: {$exists: true}})
+        if (item == null){
+            return "Error: Batch ID does not exist"
+        }
+
+        batchStock=item[batch].stock
+        if (batchStock<=stockChange){
+            await removeBatch({_id: item[batch]._id})
+            if (batchStock==item.stock){
+                SKU=item._id
+                remove=await client.db(nameOfDatabase).collection(catalogCollection).findOne({_id: SKU})
+                await removeItem(remove.name)
+                return "Item was removed due to all stock of final batch being depleted"
+            }
+
+            if (batchStock<stockChange){
+                return `Warning ${batch} did not have ${stockChange} stock remaining. It only had ${batchStock}.`
+            }
+            return "The batch was removed due to no stock remaining."
+        }
 
         await client.db(nameOfDatabase).collection(stockCollection).updateOne({[batch]: {$exists: true}}, {$set: {[batch]: {
             _id: id,
             stock: item[batch].stock-stockChange
         }}})
         await client.db(nameOfDatabase).collection(stockCollection).updateOne({[batch]: {$exists: true}}, {$set: {stock: item.stock-stockChange}})
+
+        return `${batch} stock was altered.`
     } catch (e) {
         console.error(e);
     } finally {

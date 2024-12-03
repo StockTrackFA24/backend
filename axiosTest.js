@@ -1,15 +1,13 @@
 const axios = require('axios');
 
-
-
-
+/*
 // This request will create a new placeholder object
 axios.post('http://localhost:4000/createItem',  data={
-    name: 'TestO1',
+    name: "Test01",
     description: 'This is a test to ensure routes are working.',
     category: 'Placeholder',
     price: 500,
-    stock: 15,
+    stock: 15
   },
     {
       headers: {
@@ -24,9 +22,9 @@ axios.post('http://localhost:4000/createItem',  data={
     console.log(error);
   });
 
-/*
+*/
 axios.post('http://localhost:4000/removeItem',  data={
-  name: 'TestObject',
+  _id: '1A3WJIMK',
 },
   {
     headers: {
@@ -41,9 +39,10 @@ axios.post('http://localhost:4000/removeItem',  data={
   console.log(error);
 });
 
+/*
 
 axios.post('http://localhost:4000/createBatch',  data={
-  name: 'Helmet',
+  name: 'Test1',
   stock: 3
 },
   {
@@ -61,8 +60,8 @@ axios.post('http://localhost:4000/createBatch',  data={
 
 
 axios.post('http://localhost:4000/batchStock',  data={
-  _id: "806312733672",
-  stock: 1
+  _id: "895098491006",
+  stock: 16
 },
   {
     headers: {
@@ -77,7 +76,7 @@ axios.post('http://localhost:4000/batchStock',  data={
   console.log(error);
 });
 
-
+/*
 // This is a basic request that will fetch all the items in the entire database
 axios.post('http://localhost:4000/standardQuery', data={
   sub: "R"
@@ -110,11 +109,10 @@ axios.post('http://localhost:4000/batchesQuery',  data={
   console.log(error);
 });
 
-*/
 
-/*
+
 axios.post('http://localhost:4000/removeBatch',  data={
-  _id: "806312733672"
+  _id: "013805110083"
 },
   {
     headers: {
