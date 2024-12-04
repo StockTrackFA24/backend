@@ -1,5 +1,6 @@
 const {MongoClient} = require('mongodb');
 
+
 let converter = require('json-2-csv');
 const fs = require('fs');
 const {json2csv} = require("json-2-csv");
@@ -456,9 +457,10 @@ async function queryFromString(queryString){
         //A list of everything in the catalog
         list=await client.db(nameOfDatabase).collection(catalogCollection).find({ _id: { $exists: true } }).toArray()
 
+        queryString=queryString.toLowerCase()
         //remove anything that doesn't contain the substring
         for (i=0; i<list.length;i++){
-            if (!(list[i].name.includes(queryString) || (list[i]._id.includes(queryString)) || list[i].category.includes(queryString))){
+            if (!(list[i].name.toLowerCase().includes(queryString) || (list[i]._id.toLowerCase().includes(queryString)) || list[i].category.toLowerCase().includes(queryString))){
                 list.splice(i,1)
                 i--
             }
@@ -485,13 +487,13 @@ async function queryForBatches(subString){
         // Connect to the MongoDB cluster
         await client.connect();
 
-        substr=subString.sub
+        substr=subString.sub.toLowerCase()
 
         list=await client.db(nameOfDatabase).collection(catalogCollection).find({ _id: { $exists: true } }).toArray()
 
         //remove anything that doesn't contain the substring
         for (i=0; i<list.length;i++){
-            if (!(list[i].name.includes(substr) || list[i]._id.includes(substr))){
+            if (!(list[i].name.toLowerCase().includes(substr) || list[i]._id.toLowerCase().includes(substr))){
                 list.splice(i,1)
                 i--
             }

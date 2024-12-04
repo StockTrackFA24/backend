@@ -76,10 +76,10 @@ axios.post('http://localhost:4000/batchStock',  data={
   console.log(error);
 });
 
-/*
+
 // This is a basic request that will fetch all the items in the entire database
 axios.post('http://localhost:4000/standardQuery', data={
-  sub: "R"
+  sub: "test"
 },
     {
       headers: {
@@ -91,10 +91,10 @@ axios.post('http://localhost:4000/standardQuery', data={
     .catch(function (error) {
       console.log(error);
     });
-
+*/
 
 axios.post('http://localhost:4000/batchesQuery',  data={
-  sub: "Helm"
+  sub: "Test"
 },
   {
     headers: {
@@ -109,7 +109,7 @@ axios.post('http://localhost:4000/batchesQuery',  data={
   console.log(error);
 });
 
-
+/*
 
 axios.post('http://localhost:4000/removeBatch',  data={
   _id: "013805110083"
@@ -127,7 +127,7 @@ axios.post('http://localhost:4000/removeBatch',  data={
   console.log(error);
 });
 
-*/
+
 
 axios.post('http://localhost:4000/itemUpdate',  data={
   _id: "F9BNVSVD",
@@ -148,3 +148,5 @@ axios.post('http://localhost:4000/itemUpdate',  data={
 .catch(function (error) {
   console.log(error);
 });
+
+*/
