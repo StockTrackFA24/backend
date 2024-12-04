@@ -10,14 +10,9 @@ const uri =process.env.MONGO_URI;
 const nameOfDatabase=process.env.DB_NAME;
 const catalogCollection=process.env.CATALOG_COLLECTION;
 const stockCollection=process.env.STOCK_COLLECTION;
-const roleCollection=process.env.ROLE_COLLECTION;
-const userCollection=process.env.USER_COLLECTION;
-
-
 
 //Chris's Work List
 
-//Then
 //Work on audit logs, audit everything
 //audit log is new collection in database
 //log had timestamp, user, and description
@@ -462,9 +457,10 @@ async function queryFromString(queryString){
         //A list of everything in the catalog
         list=await client.db(nameOfDatabase).collection(catalogCollection).find({ _id: { $exists: true } }).toArray()
 
+        queryString=queryString.toLowerCase()
         //remove anything that doesn't contain the substring
         for (i=0; i<list.length;i++){
-            if (!(list[i].name.includes(queryString) || (list[i]._id.includes(queryString)) || list[i].category.includes(queryString))){
+            if (!(list[i].name.toLowerCase().includes(queryString) || (list[i]._id.toLowerCase().includes(queryString)) || list[i].category.toLowerCase().includes(queryString))){
                 list.splice(i,1)
                 i--
             }
@@ -491,13 +487,13 @@ async function queryForBatches(subString){
         // Connect to the MongoDB cluster
         await client.connect();
 
-        substr=subString.sub
+        substr=subString.sub.toLowerCase()
 
         list=await client.db(nameOfDatabase).collection(catalogCollection).find({ _id: { $exists: true } }).toArray()
 
         //remove anything that doesn't contain the substring
         for (i=0; i<list.length;i++){
-            if (!(list[i].name.includes(substr) || list[i]._id.includes(substr))){
+            if (!(list[i].name.toLowerCase().includes(substr) || list[i]._id.toLowerCase().includes(substr))){
                 list.splice(i,1)
                 i--
             }
@@ -527,33 +523,44 @@ async function queryForBatches(subString){
     }
 }
 
-async function createRole(roleInfo) {
+async function itemUpdate(newItem){
     const client = new MongoClient(uri);
-    //let result;
-
     try {
+        // Connect to the MongoDB cluster
         await client.connect();
 
+        contains=await client.db(nameOfDatabase).collection(catalogCollection).findOne({_id: newItem._id})
+        if (!contains){
+            return "Error: SKU not found."
+        }
+        contains=await client.db(nameOfDatabase).collection(catalogCollection).findOne({name: newItem.name})
+        if (contains){
+            if (contains._id!=newItem._id){
+                return "Error: Item name already exists."
+            }
+        }
 
-        //if (await client.db(nameOfDatabase).collection(roleCollection).findOne( { name: roleInfo.name } )) {
-            //throw new TypeError("Role with name " + roleInfo.name + " already exists");
-            console.log("hi")
-        //}
+        if (typeof newItem.name != "undefined"){
+            await client.db(nameOfDatabase).collection(catalogCollection).updateOne({_id: newItem._id}, {$set: {name: newItem.name}})
+        }
+        if (typeof newItem.category != "undefined"){
+            await client.db(nameOfDatabase).collection(catalogCollection).updateOne({_id: newItem._id}, {$set: {category: newItem.category}})
+        }
+        if (typeof newItem.description != "undefined"){
+            await client.db(nameOfDatabase).collection(catalogCollection).updateOne({_id: newItem._id}, {$set: {description: newItem.description}})
+        }
+        if (typeof newItem.price != "undefined"){
+            await client.db(nameOfDatabase).collection(catalogCollection).updateOne({_id: newItem._id}, {$set: {price: newItem.price}})
+        }
 
-       // if (await client.db(nameOfDatabase).collection(roleCollection).findOne( { displayName: roleInfo.displayName } )) {
-            //throw new TypeError("Role with display name " + roleInfo.name + " already exists");
-            console.log("bye")
-       // }
-
-        /*const result=*/ await client.db(nameOfDatabase).collection(roleCollection).insertOne(roleInfo);
-
-    } catch(e) {
+        return `Updated Listing with id of: ${newItem._id}`
+    } catch (e) {
         console.error(e);
     } finally {
         await client.close();
     }
 }
 
-module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, createRole};
+module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate};
 
 //main()

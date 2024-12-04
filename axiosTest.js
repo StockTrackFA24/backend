@@ -22,7 +22,7 @@ axios.post('http://localhost:4000/createItem',  data={
     console.log(error);
   });
 
-*/
+
 axios.post('http://localhost:4000/removeItem',  data={
   _id: '1A3WJIMK',
 },
@@ -76,10 +76,10 @@ axios.post('http://localhost:4000/batchStock',  data={
   console.log(error);
 });
 
-/*
+
 // This is a basic request that will fetch all the items in the entire database
 axios.post('http://localhost:4000/standardQuery', data={
-  sub: "R"
+  sub: "test"
 },
     {
       headers: {
@@ -91,10 +91,28 @@ axios.post('http://localhost:4000/standardQuery', data={
     .catch(function (error) {
       console.log(error);
     });
-
+*/
 
 axios.post('http://localhost:4000/batchesQuery',  data={
-  sub: "Helm"
+  sub: "Test"
+},
+  {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }
+)
+.then(function (response) {
+  console.log(response);
+})
+.catch(function (error) {
+  console.log(error);
+});
+
+/*
+
+axios.post('http://localhost:4000/removeBatch',  data={
+  _id: "013805110083"
 },
   {
     headers: {
@@ -111,8 +129,12 @@ axios.post('http://localhost:4000/batchesQuery',  data={
 
 
 
-axios.post('http://localhost:4000/removeBatch',  data={
-  _id: "013805110083"
+axios.post('http://localhost:4000/itemUpdate',  data={
+  _id: "F9BNVSVD",
+  name: "Test01",
+  description: 'This is a test to ensure routes.',
+  category: 'Place',
+  price: 50,
 },
   {
     headers: {
