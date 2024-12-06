@@ -4,7 +4,7 @@ const axios = require('axios');
 // This request will create a new placeholder object
 /*
 axios.post('http://localhost:4000/createItem',  data={
-    name: "Test012",
+    name: "Test0123",
     description: 'This is a test to ensure routes are working.',
     category: 'Placeholder',
     price: 500,
@@ -23,9 +23,9 @@ axios.post('http://localhost:4000/createItem',  data={
     console.log(error);
   });
 
-/*
+
 axios.post('http://localhost:4000/removeItem',  data={
-  _id: '1A3WJIMK',
+  _id: 'PKNR7J00',
 },
   {
     headers: {
@@ -40,10 +40,10 @@ axios.post('http://localhost:4000/removeItem',  data={
   console.log(error);
 });
 
-/*
+
 
 axios.post('http://localhost:4000/createBatch',  data={
-  name: 'Test1',
+  name: 'Test01',
   stock: 3
 },
   {
@@ -61,8 +61,8 @@ axios.post('http://localhost:4000/createBatch',  data={
 
 
 axios.post('http://localhost:4000/batchStock',  data={
-  _id: "895098491006",
-  stock: 16
+  _id: "813047045543",
+  stock: 3
 },
   {
     headers: {
@@ -92,7 +92,6 @@ axios.post('http://localhost:4000/standardQuery', data={
     .catch(function (error) {
       console.log(error);
     });
-*/
 
 axios.post('http://localhost:4000/batchesQuery',  data={
   sub: "b"
@@ -110,10 +109,9 @@ axios.post('http://localhost:4000/batchesQuery',  data={
   console.log(error);
 });
 
-/*
 
 axios.post('http://localhost:4000/removeBatch',  data={
-  _id: "013805110083"
+  _id: "846247299823"
 },
   {
     headers: {
@@ -127,12 +125,12 @@ axios.post('http://localhost:4000/removeBatch',  data={
 .catch(function (error) {
   console.log(error);
 });
-
+*/
 
 
 axios.post('http://localhost:4000/itemUpdate',  data={
-  _id: "F9BNVSVD",
-  name: "Test01",
+  _id: "S6YPD8NW",
+  name: "Test02",
   description: 'This is a test to ensure routes.',
   category: 'Place',
   price: 50,
@@ -150,4 +148,3 @@ axios.post('http://localhost:4000/itemUpdate',  data={
   console.log(error);
 });
 
-*/
