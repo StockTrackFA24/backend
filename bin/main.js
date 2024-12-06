@@ -1,6 +1,5 @@
 const {MongoClient} = require('mongodb');
 
-
 let converter = require('json-2-csv');
 const fs = require('fs');
 const {json2csv} = require("json-2-csv");
@@ -489,6 +488,28 @@ async function queryForBatches(subString){
 
         substr=subString.sub.toLowerCase()
 
+        allBatches=[]
+        allBatchIds=[]
+
+        batchId=subString.sub
+        list=await client.db(nameOfDatabase).collection(catalogCollection).find({ _id: { $exists: true } }).toArray()
+        for (i=0; i<list.length;i++){
+            SKU=list[i]._id
+            batches=await client.db(nameOfDatabase).collection(stockCollection).findOne({_id: SKU})
+            batchList=Object.keys(batches)
+            batchList.splice(0,3)
+            for (b=0; b<batchList.length;b++){
+                batchList[b]=batchList[b].slice(5)
+                if (batchList[b].includes(batchId)){
+                    batch=batches[batchList[b]]
+                    batch.name=list[i].name
+                    batch.SKU=list[i]._id
+                    allBatches.push(batches[batchList[b]])
+                    allBatchIds.push(batch._id)
+                }
+            }
+        }
+
         list=await client.db(nameOfDatabase).collection(catalogCollection).find({ _id: { $exists: true } }).toArray()
 
         //remove anything that doesn't contain the substring
@@ -499,7 +520,6 @@ async function queryForBatches(subString){
             }
         }
 
-        allBatches=[]
         for (i=0; i<list.length;i++){
             SKU=list[i]._id
             itemName=list[i].name
@@ -512,9 +532,12 @@ async function queryForBatches(subString){
                 batch=allEntries[x][1]
                 batch.name=itemName
                 batch.SKU=SKU
-                allBatches.push(batch)
+                if (!allBatchIds.includes(batch._id)){
+                    allBatches.push(batch)
+                }
             }
         }
+
         return allBatches
     } catch (e) {
         console.error(e);
