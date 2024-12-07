@@ -1,6 +1,5 @@
 const {MongoClient} = require('mongodb');
 
-
 let converter = require('json-2-csv');
 const fs = require('fs');
 const {json2csv} = require("json-2-csv");
@@ -10,6 +9,8 @@ const uri =process.env.MONGO_URI;
 const nameOfDatabase=process.env.DB_NAME;
 const catalogCollection=process.env.CATALOG_COLLECTION;
 const stockCollection=process.env.STOCK_COLLECTION;
+const auditCollection=process.env.AUDIT_COLLECTION;
+
 
 //Chris's Work List
 
@@ -142,6 +143,8 @@ async function createItem(newCatalog){
             })
         }
 
+        await auditLogs(client, "Bob", `Created item, ${newCatalog.name}, made with id of: ${result.insertedId}`)
+
         return `New Listing made with id of: ${result.insertedId}`
     } catch (e) {
         console.error(e);
@@ -169,6 +172,9 @@ async function removeItem(removeCatalog){
         await client.db(nameOfDatabase).collection(catalogCollection).deleteOne({name: itemName})
         id=deleting._id
         await client.db(nameOfDatabase).collection(stockCollection).deleteOne({_id: id})
+
+        await auditLogs(client, "Bob", `Deleted item: ${itemName}`)
+
         return `Deleted item: ${itemName}`
     } catch (e) {
         console.error(e);
@@ -226,6 +232,8 @@ async function createBatch(newBatch){
 
         await client.db(nameOfDatabase).collection(stockCollection).updateOne({_id: SKU},{$rename: {batch: "batch".concat(id)}})
 
+        await auditLogs(client, "Bob", `New batch created with id: ${id}`)
+
         return `New batch created with id: ${id}`
     } catch (e) {
         console.error(e);
@@ -265,6 +273,8 @@ async function removeBatch(batchId){
             await removeItem(remove.name)
             return "Item was removed due to final batch being removed"
         }
+
+        await auditLogs(client, "Bob", `${batch} was removed.`)
 
         return `${batch} was removed.`
     } catch (e) {
@@ -318,6 +328,8 @@ async function batchStock(editBatch){
             stock: item[batch].stock-stockChange
         }}})
         await client.db(nameOfDatabase).collection(stockCollection).updateOne({[batch]: {$exists: true}}, {$set: {stock: item.stock-stockChange}})
+
+        await auditLogs(client, "Bob", `${batch} stock was altered by ${stockChange}`)
 
         return `${batch} stock was altered.`
     } catch (e) {
@@ -414,6 +426,7 @@ async function generateBatchId() {
                 console.log("Error")
             }
         }
+
         return id
     } catch (e) {
         console.error(e);
@@ -472,6 +485,8 @@ async function queryFromString(queryString){
             list[i].stock=stock.stock;
         }
 
+        await auditLogs(client, "Bob", `Searched the database for items with ${queryString}`)
+
         return list
     } catch (e) {
         console.error(e);
@@ -489,6 +504,28 @@ async function queryForBatches(subString){
 
         substr=subString.sub.toLowerCase()
 
+        allBatches=[]
+        allBatchIds=[]
+
+        batchId=subString.sub
+        list=await client.db(nameOfDatabase).collection(catalogCollection).find({ _id: { $exists: true } }).toArray()
+        for (i=0; i<list.length;i++){
+            SKU=list[i]._id
+            batches=await client.db(nameOfDatabase).collection(stockCollection).findOne({_id: SKU})
+            batchList=Object.keys(batches)
+            batchList.splice(0,3)
+            for (b=0; b<batchList.length;b++){
+                batchList[b]=batchList[b].slice(5)
+                if (batchList[b].includes(batchId)){
+                    batch=batches[batchList[b]]
+                    batch.name=list[i].name
+                    batch.SKU=list[i]._id
+                    allBatches.push(batches[batchList[b]])
+                    allBatchIds.push(batch._id)
+                }
+            }
+        }
+
         list=await client.db(nameOfDatabase).collection(catalogCollection).find({ _id: { $exists: true } }).toArray()
 
         //remove anything that doesn't contain the substring
@@ -499,7 +536,6 @@ async function queryForBatches(subString){
             }
         }
 
-        allBatches=[]
         for (i=0; i<list.length;i++){
             SKU=list[i]._id
             itemName=list[i].name
@@ -512,9 +548,14 @@ async function queryForBatches(subString){
                 batch=allEntries[x][1]
                 batch.name=itemName
                 batch.SKU=SKU
-                allBatches.push(batch)
+                if (!allBatchIds.includes(batch._id)){
+                    allBatches.push(batch)
+                }
             }
         }
+
+        await auditLogs(client, "Bob", "Searched for batches with "+subString.sub)
+
         return allBatches
     } catch (e) {
         console.error(e);
@@ -553,12 +594,24 @@ async function itemUpdate(newItem){
             await client.db(nameOfDatabase).collection(catalogCollection).updateOne({_id: newItem._id}, {$set: {price: newItem.price}})
         }
 
+        await auditLogs(client, "Bob", `Updated Listing with id of: ${newItem._id}`)
+
         return `Updated Listing with id of: ${newItem._id}`
     } catch (e) {
         console.error(e);
     } finally {
         await client.close();
     }
+}
+
+async function auditLogs(client, user, description){
+    await client.db(nameOfDatabase).collection(auditCollection).insertOne({
+        user: user,
+        timestamp: new Date(Date.now()),
+        description: description
+    })
+
+    return
 }
 
 module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate};

@@ -1,9 +1,10 @@
 const axios = require('axios');
 
-/*
+
 // This request will create a new placeholder object
+/*
 axios.post('http://localhost:4000/createItem',  data={
-    name: "Test01",
+    name: "Test012",
     description: 'This is a test to ensure routes are working.',
     category: 'Placeholder',
     price: 500,
@@ -22,7 +23,7 @@ axios.post('http://localhost:4000/createItem',  data={
     console.log(error);
   });
 
-
+/*
 axios.post('http://localhost:4000/removeItem',  data={
   _id: '1A3WJIMK',
 },
@@ -94,7 +95,7 @@ axios.post('http://localhost:4000/standardQuery', data={
 */
 
 axios.post('http://localhost:4000/batchesQuery',  data={
-  sub: "Test"
+  sub: "b"
 },
   {
     headers: {
