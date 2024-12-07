@@ -637,6 +637,8 @@ async function auditQuery(){
         logs=await client.db(nameOfDatabase).collection(auditCollection).find({ _id: { $exists: true } }).toArray()
         logs.reverse()
 
+        await auditLogs(client, "Bob", `Looked at the audit logs`)
+
         return logs
         
     } catch (e) {
@@ -674,6 +676,9 @@ async function createRole(newRole){
         }
 
         const result = await client.db(nameOfDatabase).collection(roleCollection).insertOne(newerRole);
+
+        await auditLogs(client, "Bob", ` Created a role with id of ${result.insertedId}`)
+
         return `New role created with id of ${result.insertedId}`;
     } catch (e) {
         console.error(e);
