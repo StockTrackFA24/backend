@@ -1,4 +1,4 @@
-const {MongoClient, Long} = require('mongodb');
+const {MongoClient} = require('mongodb');
 
 let converter = require('json-2-csv');
 const fs = require('fs');
@@ -10,11 +10,6 @@ const nameOfDatabase=process.env.DB_NAME;
 const catalogCollection=process.env.CATALOG_COLLECTION;
 const stockCollection=process.env.STOCK_COLLECTION;
 const auditCollection=process.env.AUDIT_COLLECTION;
-const roleCollection=process.env.ROLE_COLLECTION;
-const userCollection = process.env.USER_COLLECTION;
-
-
-//roleCollection="Role"
 
 //Chris's Work List
 
@@ -150,42 +145,6 @@ async function createItem(newCatalog){
         await auditLogs(client, "Bob", `Created item, ${newCatalog.name}, made with id of: ${result.insertedId}`)
 
         return `New Listing made with id of: ${result.insertedId}`
-    } catch (e) {
-        console.error(e);
-    } finally {
-        await client.close();
-    }
-}
-
-async function createRole(newRole){
-
-    if (typeof newRole.role_name == "undefined") {
-        return "Error: Role had no name."
-    }
-    else  if (typeof newRole.display_name == "undefined") {
-        return "Error: Role had no display name."
-    }
-    else  if (typeof newRole.description == "undefined") {
-        return "Error: Role had no description."
-    }
-    else  if (typeof newRole.Perms == "undefined") {
-        return "Error: Role had no permissions."
-    }
-
-    const client = new MongoClient(uri);
-
-    try {
-        await client.connect();
-
-        let newerRole = {
-            role_name: newRole.role_name,
-            display_name: newRole.display_name,
-            description: newRole.description,
-            Perms: Long.fromString(newRole.Perms),
-        }
-
-        const result = await client.db(nameOfDatabase).collection(roleCollection).insertOne(newerRole);
-        return `New role created with id of ${result.insertedId}`;
     } catch (e) {
         console.error(e);
     } finally {
@@ -477,14 +436,28 @@ async function generateBatchId() {
     }
 }
 
-async function importFromCSV(client, file_path) {
-    let file_contents = fs.readFileSync(file_path,{
-        trimHeaderFields: true,
-        trimFieldValues: true
-    }).toString();
-    file_contents = file_contents.replaceAll("\r\n", "\n");
-    let converted_objects = converter.csv2json(file_contents);
-    console.log(converted_objects)
+async function importFromCSV(csvString) {
+    const client = new MongoClient(uri);
+    csvString = csvString.replaceAll("\r\n", "\n");
+    try {
+        let converted_objects = converter.csv2json(csvString);
+        for (const item of converted_objects) {
+            const newItemCatalog = {
+                name: item.name,
+                description: item.description,
+                category: item.category,
+                price: item.price,
+                stock: item.stock,
+            }
+            await createItem(newItemCatalog);
+            await auditLogs(client, "Bob", "imported a file")
+
+        }
+    } catch (e) {
+        console.error(e);
+    }
+
+    /*
     for (const item of converted_objects) {
         let extra_keys = Object.keys(item);
         delete extra_keys[extra_keys.indexOf('_id')];
@@ -500,6 +473,8 @@ async function importFromCSV(client, file_path) {
         await createItem(client, converted_catalog, converted_stock);
         await auditLogs(client, "Bob", "Imported a file")
     }
+
+     */
 }
 
 //Return an array of any item that matches the substring given. Checks name and id, and category. Array includes items name and total stock level
@@ -657,6 +632,6 @@ async function auditLogs(client, user, description){
     return
 }
 
-module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate, createRole};
+module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate, importFromCSV};
 
 //main()
