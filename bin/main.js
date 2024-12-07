@@ -13,7 +13,6 @@ const auditCollection=process.env.AUDIT_COLLECTION;
 const roleCollection = process.env.ROLES_COLLECTION;
 const userCollection = process.env.USERS_COLLECTION;
 
-
 //Chris's Work List
 
 //Work on audit logs, audit everything
@@ -372,6 +371,8 @@ async function exportToCSV() {
     for (let i=0; i<numItems; i++){
         catalogList[i].stock =stockList[i].stock
     }
+
+    await auditLogs(client, "Bob", "Exported a file")    
     return json2csv(catalogList);
     /*
     console.log(csvString);
@@ -473,6 +474,7 @@ async function importFromCSV(client, file_path) {
         converted_stock['_id'] = item._id;
         converted_stock['stock'] = item.stock;
         await createItem(client, converted_catalog, converted_stock);
+        await auditLogs(client, "Bob", "Imported a file")
     }
 }
 
@@ -532,8 +534,8 @@ async function queryForBatches(subString){
             batchList=Object.keys(batches)
             batchList.splice(0,3)
             for (b=0; b<batchList.length;b++){
-                batchList[b]=batchList[b].slice(5)
-                if (batchList[b].includes(batchId)){
+                batchTest=batchList[b].slice(5)
+                if (batchTest.includes(batchId)){
                     batch=batches[batchList[b]]
                     batch.name=list[i].name
                     batch.SKU=list[i]._id
