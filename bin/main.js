@@ -436,14 +436,28 @@ async function generateBatchId() {
     }
 }
 
-async function importFromCSV(client, file_path) {
-    let file_contents = fs.readFileSync(file_path,{
-        trimHeaderFields: true,
-        trimFieldValues: true
-    }).toString();
-    file_contents = file_contents.replaceAll("\r\n", "\n");
-    let converted_objects = converter.csv2json(file_contents);
-    console.log(converted_objects)
+async function importFromCSV(csvString) {
+    const client = new MongoClient(uri);
+    csvString = csvString.replaceAll("\r\n", "\n");
+    try {
+        let converted_objects = converter.csv2json(csvString);
+        for (const item of converted_objects) {
+            const newItemCatalog = {
+                name: item.name,
+                description: item.description,
+                category: item.category,
+                price: item.price,
+                stock: item.stock,
+            }
+            await createItem(newItemCatalog);
+            await auditLogs(client, "Bob", "imported a file")
+
+        }
+    } catch (e) {
+        console.error(e);
+    }
+
+    /*
     for (const item of converted_objects) {
         let extra_keys = Object.keys(item);
         delete extra_keys[extra_keys.indexOf('_id')];
@@ -459,6 +473,8 @@ async function importFromCSV(client, file_path) {
         await createItem(client, converted_catalog, converted_stock);
         await auditLogs(client, "Bob", "Imported a file")
     }
+
+     */
 }
 
 //Return an array of any item that matches the substring given. Checks name and id, and category. Array includes items name and total stock level
@@ -616,6 +632,6 @@ async function auditLogs(client, user, description){
     return
 }
 
-module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate};
+module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate, importFromCSV};
 
 //main()
