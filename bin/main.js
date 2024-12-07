@@ -5,6 +5,7 @@ const fs = require('fs');
 const {json2csv} = require("json-2-csv");
 require('dotenv').config();
 
+
 const uri =process.env.MONGO_URI;
 const nameOfDatabase=process.env.DB_NAME;
 const catalogCollection=process.env.CATALOG_COLLECTION;
@@ -12,13 +13,6 @@ const stockCollection=process.env.STOCK_COLLECTION;
 const auditCollection=process.env.AUDIT_COLLECTION;
 const roleCollection=process.env.ROLE_COLLECTION;
 const userCollection = process.env.USER_COLLECTION;
-
-//Chris's Work List
-
-//Work on audit logs, audit everything
-//audit log is new collection in database
-//log had timestamp, user, and description
-//functions for viewing audit logs sort from newest to oldest.
 
 async function main(){
     /** 
@@ -634,6 +628,23 @@ async function auditLogs(client, user, description){
     return
 }
 
+async function auditQuery(){
+    const client = new MongoClient(uri);
+    try {
+        // Connect to the MongoDB cluster
+        await client.connect();
+
+        logs=await client.db(nameOfDatabase).collection(auditCollection).find({ _id: { $exists: true } }).toArray()
+
+        return logs
+        
+    } catch (e) {
+        console.error(e);
+    } finally {
+        await client.close();
+    }
+}
+
 async function createRole(newRole){
 
     if (typeof newRole.role_name == "undefined") {
@@ -670,6 +681,6 @@ async function createRole(newRole){
     }
 }
 
-module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate, importFromCSV, createRole};
+module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate, importFromCSV, auditQuery, createRole};
 
 //main()

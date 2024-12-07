@@ -152,6 +152,21 @@ axios.post('http://localhost:4000/itemUpdate',  data={
 
 */
 
+axios.post('http://localhost:4000/auditQuery',
+  {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }
+)
+.then(function (response) {
+  console.log(response);
+})
+.catch(function (error) {
+  console.log(error);
+});
+
+/*
 axios.post('http://localhost:4000/createRole',  data={
     role_name: "Test012",
     description: 'This is a test to ensure routes are working.',
@@ -170,3 +185,4 @@ axios.post('http://localhost:4000/createRole',  data={
   .catch(function (error) {
     console.log(error);
   });
+*/
