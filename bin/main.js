@@ -1,4 +1,4 @@
-const {MongoClient} = require('mongodb');
+const {MongoClient, Long} = require('mongodb');
 
 let converter = require('json-2-csv');
 const fs = require('fs');
@@ -10,6 +10,8 @@ const nameOfDatabase=process.env.DB_NAME;
 const catalogCollection=process.env.CATALOG_COLLECTION;
 const stockCollection=process.env.STOCK_COLLECTION;
 const auditCollection=process.env.AUDIT_COLLECTION;
+const roleCollection=process.env.ROLE_COLLECTION;
+const userCollection = process.env.USER_COLLECTION;
 
 //Chris's Work List
 
@@ -632,6 +634,42 @@ async function auditLogs(client, user, description){
     return
 }
 
-module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate, importFromCSV};
+async function createRole(newRole){
+
+    if (typeof newRole.role_name == "undefined") {
+        return "Error: Role had no name."
+    }
+    else  if (typeof newRole.display_name == "undefined") {
+        return "Error: Role had no display name."
+    }
+    else  if (typeof newRole.description == "undefined") {
+        return "Error: Role had no description."
+    }
+    else  if (typeof newRole.Perms == "undefined") {
+        return "Error: Role had no permissions."
+    }
+
+    const client = new MongoClient(uri);
+
+    try {
+        await client.connect();
+
+        let newerRole = {
+            role_name: newRole.role_name,
+            display_name: newRole.display_name,
+            description: newRole.description,
+            Perms: Long.fromString(newRole.Perms),
+        }
+
+        const result = await client.db(nameOfDatabase).collection(roleCollection).insertOne(newerRole);
+        return `New role created with id of ${result.insertedId}`;
+    } catch (e) {
+        console.error(e);
+    } finally {
+        await client.close();
+    }
+}
+
+module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate, importFromCSV, createRole};
 
 //main()

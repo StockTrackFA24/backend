@@ -4,7 +4,7 @@ const port = 4000
 
 app.use(express.json())
 
-const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches, exportToCSV, itemUpdate, importFromCSV} = require('./main.js')
+const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches, exportToCSV, itemUpdate, importFromCSV, createRole} = require('./main.js')
 
 async function wait(){
 
@@ -131,6 +131,20 @@ async function wait(){
       let csvString = req.body.csvString
       await importFromCSV(csvString)
       res.send("import complete")
+  })
+
+  app.post('/createRole', async (req, res) => {
+    let roleAttributes = {
+      role_name : req.body.role_name,
+      display_name : req.body.display_name,
+      description : req.body.description,
+      Perms : req.body.Perms,
+    };
+
+    output = await createRole(roleAttributes);
+
+    res.send(output);
+
   })
   
   app.listen(port, () => {
