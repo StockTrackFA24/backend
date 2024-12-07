@@ -93,7 +93,7 @@ axios.post('http://localhost:4000/standardQuery', data={
       console.log(error);
     });
 */
-
+/*
 axios.post('http://localhost:4000/batchesQuery',  data={
   sub: "4"
 },
@@ -109,7 +109,7 @@ axios.post('http://localhost:4000/batchesQuery',  data={
 .catch(function (error) {
   console.log(error);
 });
-
+*/
 /*
 
 axios.post('http://localhost:4000/removeBatch',  data={
@@ -151,3 +151,22 @@ axios.post('http://localhost:4000/itemUpdate',  data={
 });
 
 */
+
+axios.post('http://localhost:4000/createRole',  data={
+    role_name: "Test012",
+    description: 'This is a test to ensure routes are working.',
+    display_name: 'Placeholder',
+    Perms: 1000
+  },
+    {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }
+  )
+  .then(function (response) {
+    console.log(response);
+  })
+  .catch(function (error) {
+    console.log(error);
+  });
