@@ -95,7 +95,7 @@ axios.post('http://localhost:4000/standardQuery', data={
 */
 
 axios.post('http://localhost:4000/batchesQuery',  data={
-  sub: "b"
+  sub: "4"
 },
   {
     headers: {
