@@ -10,6 +10,8 @@ const nameOfDatabase=process.env.DB_NAME;
 const catalogCollection=process.env.CATALOG_COLLECTION;
 const stockCollection=process.env.STOCK_COLLECTION;
 const auditCollection=process.env.AUDIT_COLLECTION;
+const roleCollection = process.env.ROLES_COLLECTION;
+const userCollection = process.env.USERS_COLLECTION;
 
 
 //Chris's Work List
@@ -146,6 +148,21 @@ async function createItem(newCatalog){
         await auditLogs(client, "Bob", `Created item, ${newCatalog.name}, made with id of: ${result.insertedId}`)
 
         return `New Listing made with id of: ${result.insertedId}`
+    } catch (e) {
+        console.error(e);
+    } finally {
+        await client.close();
+    }
+}
+
+async function createRole(newRole){
+    const client = new MongoClient(uri);
+
+    try {
+        await client.connect();
+
+        const result = await client.db(nameOfDatabase).collection(roleCollection).insertOne(newRole);
+        return `New role created with id of ${result.insertedId}`;
     } catch (e) {
         console.error(e);
     } finally {
@@ -614,6 +631,6 @@ async function auditLogs(client, user, description){
     return
 }
 
-module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate};
+module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate, createRole};
 
 //main()

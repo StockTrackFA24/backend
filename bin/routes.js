@@ -4,7 +4,7 @@ const port = 4000
 
 app.use(express.json())
 
-const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches, exportToCSV, itemUpdate} = require('./main.js')
+const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches, exportToCSV, itemUpdate, createRole} = require('./main.js')
 
 async function wait(){
 
@@ -29,6 +29,20 @@ async function wait(){
       stock: req.body.stock,
     };
     output=await createItem(itemAttributes);
+
+    res.send(output);
+
+  })
+
+  app.post('/createRole', async (req, res) => {
+    let roleAttributes = {
+      role_name : req.body.role_name,
+      display_name : req.body.display_name,
+      description : req.body.description,
+      Perms : req.body.Perms,
+    };
+
+    output = await createRole(roleAttributes);
 
     res.send(output);
 
