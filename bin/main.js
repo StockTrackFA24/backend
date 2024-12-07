@@ -635,6 +635,7 @@ async function auditQuery(){
         await client.connect();
 
         logs=await client.db(nameOfDatabase).collection(auditCollection).find({ _id: { $exists: true } }).toArray()
+        logs.reverse()
 
         return logs
         
