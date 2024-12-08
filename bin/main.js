@@ -689,6 +689,19 @@ async function createRole(newRole){
             newRole.Perms = '0';
         }
 
+        newName = newRole.role_name;
+        contains = await client.db(nameOfDatabase).collection(roleCollection).findOne({name: newName});
+
+        if (contains)
+        {
+            return `Role with name ${newName} already exists.`;
+        }
+
+        newDisplayName = newRole.display_name;
+        contains = await client.db(nameOfDatabase).collection(roleCollection).findOne({displayName: newDisplayName});
+
+
+
         let newerRole = {
             name: newRole.role_name,
             displayName: newRole.display_name,
