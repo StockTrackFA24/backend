@@ -5,15 +5,7 @@ let converter = require('json-2-csv');
 const fs = require('fs');
 const {json2csv} = require("json-2-csv");
 
-const { mongo, collections } = require('../mongodb.js');
-
-const uri =process.env.MONGO_URI;
-const nameOfDatabase=process.env.DB_NAME;
-const catalogCollection=process.env.CATALOG_COLLECTION;
-const stockCollection=process.env.STOCK_COLLECTION;
-const auditCollection=process.env.AUDIT_COLLECTION;
-const roleCollection=process.env.ROLE_COLLECTION;
-const userCollection = process.env.USER_COLLECTION;
+const { collections } = require('../mongodb.js');
 
 async function main(){
     /** 
@@ -469,18 +461,12 @@ async function queryFromString(queryString){
 
 async function roleQuery(){
 
-    const client = new MongoClient(uri);
-
     try {
-        await client.connect();
-
-        list = await client.db(nameOfDatabase).collection(roleCollection).find({ _id: { $exists: true } }).toArray();
+        list = await collections.role.find({ _id: { $exists: true } }).toArray();
 
         return list;
     } catch(e) {
         console.error(e);
-    } finally {
-        await client.close();
     }
 }
 
@@ -629,7 +615,7 @@ async function createRole(newRole){
         }
 
         newName = newRole.role_name;
-        contains = await client.db(nameOfDatabase).collection(roleCollection).findOne({name: newName});
+        contains = await collections.role.findOne({name: newName});
 
         if (contains)
         {
@@ -637,7 +623,7 @@ async function createRole(newRole){
         }
 
         newDisplayName = newRole.display_name;
-        contains = await client.db(nameOfDatabase).collection(roleCollection).findOne({displayName: newDisplayName});
+        contains = await collections.role.findOne({displayName: newDisplayName});
 
 
 
@@ -673,11 +659,7 @@ async function createAccount(newUser) {
         return "Error: User had no password."
     }
 
-    const client = new MongoClient(uri);
-
     try {
-        await client.connect();
-
         let newerUser = {
             name: newUser.name,
             role: newUser.role,
@@ -685,15 +667,13 @@ async function createAccount(newUser) {
             password: newUser.password,
         }
 
-        const result  = await client.db(nameOfDatabase).collection(userCollection).insertOne(newerUser);
+        const result  = await collections.user.insertOne(newerUser);
 
-        await auditLogs(client, "Bob", ` Created a user with id of ${result.insertedId}`);
+        await auditLogs("Bob", ` Created a user with id of ${result.insertedId}`);
 
         return `New user created with id of ${result.insertedId}`;
     } catch (e) {
         console.error(e);
-    } finally {
-        await client.close();
     }
 }
 
