@@ -470,6 +470,41 @@ async function roleQuery(){
     }
 }
 
+async function accountQuery() {
+
+    try {
+
+        list = await collections.user.aggregate( [
+            {
+                $lookup: {
+                    from: process.env.ROLE_COLLECTION,
+                    localField: 'roles',
+                    foreignField: '_id',
+                    as: 'roleInfo',
+                    pipeline: [
+                        {
+                            $project: {
+                                name: 1,
+                                displayName: 1
+                            }
+                        }
+                    ]
+                },
+            },
+            {
+                $project: {
+                    username: 1,
+                    roleInfo: 1
+                }
+            }
+        ]).toArray();
+
+        return list;
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 //Returns all batches associated with a substr tied to either name or SKU
 async function queryForBatches(subString){
     try {
@@ -686,6 +721,6 @@ async function getRoleId(roleName) {
     }
 }
 
-module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate, importFromCSV, auditQuery, createRole, roleQuery, createAccount};
+module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate, importFromCSV, auditQuery, createRole, roleQuery, createAccount, accountQuery};
 
 //main()

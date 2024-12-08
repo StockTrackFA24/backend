@@ -4,7 +4,7 @@ const port = 4000
 
 app.use(express.json())
 
-const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches, exportToCSV, itemUpdate, importFromCSV, auditQuery, createRole, roleQuery, createAccount} = require('./main.js')
+const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches, exportToCSV, itemUpdate, importFromCSV, auditQuery, createRole, roleQuery, createAccount, accountQuery} = require('./main.js')
 
 app.post('/createItem', async (req, res) => {
   /*  Working when recieving json value for req that we need to create
@@ -109,6 +109,11 @@ app.post('/batchesQuery', async (req, res) => {
 app.post('/roleQuery', async (req, res) => {
   roles = await roleQuery()
   res.send(roles)
+})
+
+app.post('/accountQuery', async (req, res) => {
+  accounts = await accountQuery()
+  res.send(accounts)
 })
 
 app.post('/batchesQuery', async (req, res) => {
