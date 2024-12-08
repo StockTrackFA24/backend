@@ -15,7 +15,16 @@ const collections = {
 (async () => {
   await client.connect();
 
+  try {
+    await collections.catalog.createIndex({name: 1});
+
+  } catch (error) {
+    console.error(error);
+    console.error("Failed to create indexes on collections")
+  }
+
   // create indexes and do other collection setup here :) - cullen
+  //create first role here manually by calling insertOne
 })().catch((e) => {
   console.dir(e);
   console.error("Failed to set up MongoDB (see above exception)! exploding");
