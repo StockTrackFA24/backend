@@ -494,7 +494,8 @@ async function accountQuery() {
             {
                 $project: {
                     username: 1,
-                    roleInfo: 1
+                    roleInfo: 1,
+                    name: 1
                 }
             }
         ]).toArray();
