@@ -2,7 +2,7 @@ require('./loadenv.js');
 const { MongoClient } = require('mongodb');
 
 const client = new MongoClient(process.env.MONGO_URI);
-const db = client.db();
+const db = client.db(process.env.DB_NAME);
 
 const collections = {
   catalog: db.collection(process.env.CATALOG_COLLECTION),
