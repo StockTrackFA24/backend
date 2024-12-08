@@ -509,6 +509,23 @@ async function queryFromString(queryString){
     }
 }
 
+async function roleQuery(){
+
+    const client = new MongoClient(uri);
+
+    try {
+        await client.connect();
+
+        list = await client.db(nameOfDatabase).collection(roleCollection).find({ _id: { $exists: true } }).toArray();
+
+        return list;
+    } catch(e) {
+        console.error(e);
+    } finally {
+        await client.close();
+    }
+}
+
 //Returns all batches associated with a substr tied to either name or SKU
 async function queryForBatches(subString){
     const client = new MongoClient(uri);
@@ -668,11 +685,15 @@ async function createRole(newRole){
     try {
         await client.connect();
 
+        if (newRole.Perms == '') {
+            newRole.Perms = '0';
+        }
+
         let newerRole = {
-            role_name: newRole.role_name,
-            display_name: newRole.display_name,
+            name: newRole.role_name,
+            displayName: newRole.display_name,
             description: newRole.description,
-            Perms: Long.fromString(newRole.Perms),
+            permissions: Long.fromString(newRole.Perms),
         }
 
         const result = await client.db(nameOfDatabase).collection(roleCollection).insertOne(newerRole);
@@ -687,6 +708,45 @@ async function createRole(newRole){
     }
 }
 
-module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate, importFromCSV, auditQuery, createRole};
+async function createAccount(newUser) {
+
+    if (typeof newUser.name == "undefined") {
+        return "Error: User had no name."
+    }
+    else if (typeof newUser.role == "undefined") {
+        return "Error: User had no role."
+    }
+    else if (typeof newUser.username == "undefined") {
+        return "Error: User had no username."
+    }
+    else if (typeof newUser.password == "undefined") {
+        return "Error: User had no password."
+    }
+
+    const client = new MongoClient(uri);
+
+    try {
+        await client.connect();
+
+        let newerUser = {
+            name: newUser.name,
+            role: newUser.role,
+            username: newUser.username,
+            password: newUser.password,
+        }
+
+        const result  = await client.db(nameOfDatabase).collection(userCollection).insertOne(newerUser);
+
+        await auditLogs(client, "Bob", ` Created a user with id of ${result.insertedId}`);
+
+        return `New user created with id of ${result.insertedId}`;
+    } catch (e) {
+        console.error(e);
+    } finally {
+        await client.close();
+    }
+}
+
+module.exports={queryFromString, createItem, removeItem, createBatch, removeBatch, batchStock, queryForBatches, exportToCSV, itemUpdate, importFromCSV, auditQuery, createRole, roleQuery, createAccount};
 
 //main()

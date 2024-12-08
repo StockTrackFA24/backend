@@ -4,7 +4,7 @@ const port = 4000
 
 app.use(express.json())
 
-const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches, exportToCSV, itemUpdate, importFromCSV, auditQuery, createRole} = require('./main.js')
+const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches, exportToCSV, itemUpdate, importFromCSV, auditQuery, createRole, roleQuery, createAccount} = require('./main.js')
 
 async function wait(){
 
@@ -98,6 +98,11 @@ async function wait(){
     res.send(list)
   })
 
+  app.post('/roleQuery', async (req, res) => {
+    roles = await roleQuery()
+    res.send(roles)
+  })
+
   app.post('/batchesQuery', async (req, res) => {
     /*  Working when recieving json value for req that we need to search
     example is {_id: doesn't matter, sub: Helmet}
@@ -151,6 +156,23 @@ async function wait(){
     res.send(output);
 
   })
+
+app.post('/createAccount', async (req, res) => {
+  let accountAttributes = {
+    name: {
+      first : req.body.name.first,
+      middle : req.body.name.middle,
+      last : req.body.name.last,
+    },
+    role : req.body.role,
+    username : req.body.username,
+    password: req.body.password,
+  };
+
+  output = await createAccount(accountAttributes);
+
+  res.send(output);
+})
   
   app.listen(port, () => {
     console.log(`The server is up!`)
