@@ -662,9 +662,8 @@ async function createAccount(newUser) {
     try {
         let newerUser = {
             name: newUser.name,
-            role: newUser.role,
+            roles: await getRoleId(newUser.role),
             username: newUser.username,
-            password: newUser.password,
         }
 
         const result  = await collections.user.insertOne(newerUser);
@@ -672,6 +671,16 @@ async function createAccount(newUser) {
         await auditLogs("Bob", ` Created a user with id of ${result.insertedId}`);
 
         return `New user created with id of ${result.insertedId}`;
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function getRoleId(roleName) {
+
+    //return "hi"
+    try {
+        return (await collections.role.findOne({name : roleName}))._id;
     } catch (e) {
         console.error(e);
     }
