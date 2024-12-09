@@ -304,10 +304,10 @@ async function importFromCSV(csvString) {
             stock: item.stock,
         }
         await createItem(newItemCatalog);
-        await auditLogs("Bob", "imported a file")
 
     }
 
+    await auditLogs("Bob", "imported a file")
     /*
     for (const item of converted_objects) {
         let extra_keys = Object.keys(item);
