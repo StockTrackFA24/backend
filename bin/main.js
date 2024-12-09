@@ -1,5 +1,6 @@
 const {MongoClient, Long} = require('mongodb');
 
+const axios = require('axios');
 require('../loadenv.js');
 let converter = require('json-2-csv');
 const fs = require('fs');
@@ -575,6 +576,18 @@ async function createAccount(newUser) {
 
     const result  = await collections.user.insertOne(newerUser);
 
+    axios.post('http://localhost:3002/users/password',  {
+        uid: result.insertedId.toString('base64'),
+        password: newUser.password
+      }
+      )
+      .then(function (response) {
+        console.log(response);
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+      
     await auditLogs("Bob", `Created a user with id of ${result.insertedId}`);
 
     return `New user created with id of ${result.insertedId}`;
