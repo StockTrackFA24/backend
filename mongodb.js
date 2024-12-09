@@ -15,13 +15,7 @@ const collections = {
 (async () => {
   await client.connect();
 
-  try {
-    await collections.catalog.createIndex({name: 1});
-
-  } catch (error) {
-    console.error(error);
-    console.error("Failed to create indexes on collections")
-  }
+  await collections.catalog.createIndex({name: 1});
 
   // create indexes and do other collection setup here :) - cullen
   //create first role here manually by calling insertOne
