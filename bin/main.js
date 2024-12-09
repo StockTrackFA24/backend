@@ -576,7 +576,7 @@ async function createAccount(newUser) {
 
     const result  = await collections.user.insertOne(newerUser);
 
-    axios.post('http://localhost:3002/users/password',  {
+    axios.post(process.env.PASSWORD_PORT,  {
         uid: result.insertedId.toString('base64'),
         password: newUser.password
       }
