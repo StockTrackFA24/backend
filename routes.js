@@ -167,8 +167,8 @@ app.post('/auditQuery', async (req, res) => {
 app.post('/createRole', async (req, res) => {
   let roleAttributes = {
     role_name : req.body.role_name,
-    display_name : req.body.display_name,
     description : req.body.description,
+    display_name : req.body.display_name,
     Perms : req.body.Perms,
   };
   try{

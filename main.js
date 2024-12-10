@@ -545,8 +545,8 @@ async function createRole(newRole){
 
     let newerRole = {
         name: newRole.role_name,
-        displayName: newRole.display_name,
         description: newRole.description,
+        displayName: newRole.display_name,
         permissions: Long.fromString(newRole.Perms),
     }
 
@@ -574,8 +574,10 @@ async function createAccount(newUser) {
 
     let newerUser = {
         name: newUser.name,
-        roles: await getRoleId(newUser.role),
         username: newUser.username,
+        roles: [ await getRoleId(newUser.role) ],
+        adminNotes: "N/A",
+        tokenInvalidTime: new Date(),
     }
 
     const result  = await collections.user.insertOne(newerUser);
