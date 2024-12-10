@@ -4,7 +4,7 @@ const { Long, ObjectId } = require('mongodb');
 const { collections } = require('./mongodb.js');
 const jose = require('jose');
 
-module.exports = {};
+module.exports = {defPermissionFunction};
 
 let JWT_PUBKEY = undefined;
 

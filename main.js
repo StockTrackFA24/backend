@@ -1,12 +1,14 @@
 const {MongoClient, Long} = require('mongodb');
 
 const axios = require('axios');
-require('../loadenv.js');
+require('./loadenv.js');
 let converter = require('json-2-csv');
 const fs = require('fs');
 const {json2csv} = require("json-2-csv");
 
-const { collections } = require('../mongodb.js');
+const { collections } = require('./mongodb.js');
+
+//const {defPermissionFunction} = require('./auth.js')
 
 //Create a new item in the catalog
 async function createItem(newCatalog){
@@ -28,6 +30,8 @@ async function createItem(newCatalog){
     }
 
     id=await generateSKU()
+
+    //test=defPermissionFunction()
 
     newStock={
         _id: id,
