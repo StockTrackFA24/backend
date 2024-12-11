@@ -126,7 +126,7 @@ app.post('/itemUpdate', requireAuth(permissions.EDIT_ITEM), async (req, res) => 
 
 })
 
-app.post('/exportItems', async (req, res) => {
+app.post('/exportItems', requireAuth(permissions.ITEM_QUERY), async (req, res) => {
   try{
     let csvstring = await(exportToCSV(req.body.uid))
     res.send(csvstring)
@@ -135,10 +135,11 @@ app.post('/exportItems', async (req, res) => {
   }
 })
 
-app.post('/importCSV', async (req, res) => {
+app.post('/importCSV', requireAuth(permissions.CREATE_ITEM | permissions.CREATE_BATCH), async (req, res) => {
   let csvString = req.body.csvString
+  console.log(req.permissions)
   try{
-    await importFromCSV(csvString, req.body.uid)
+    await importFromCSV(csvString, req.body.uid, req.permissions)
     res.send("import complete")
   } catch(e){
     console.error(e)

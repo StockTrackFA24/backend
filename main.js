@@ -301,7 +301,7 @@ async function generateBatchId() {
     return id
 }
 
-async function importFromCSV(csvString, uid) {
+async function importFromCSV(csvString, uid, perms) {
     csvString = csvString.replaceAll("\r\n", "\n");
     let converted_objects = converter.csv2json(csvString);
     for (const item of converted_objects) {
@@ -312,7 +312,7 @@ async function importFromCSV(csvString, uid) {
             price: item.price,
             stock: item.stock,
         }
-        await createItem(newItemCatalog, uid);
+        await createItem(newItemCatalog, uid, perms);
 
     }
 
