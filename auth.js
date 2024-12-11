@@ -67,50 +67,54 @@ module.exports.requireAuth = (permissions) => {
       return;
     }
 
-    const authorization = req.get('authorization');
-    if (!authorization || typeof authorization !== 'string' || !authorization.startsWith("Bearer ")) {
-      res.status(401).json(AUTH_GENERIC_ERROR);
-      return;
-    }
-
-    // decode and verify the token
-    let jwt;
-    try {
-      jwt = await jose.jwtVerify(authorization.substring("Bearer ".length), JWT_PUBKEY, {
-        issuer: 'urn:stocktrack',
-        audience: 'urn:stocktrack:be'
-      });
-    } catch (e) {
-      res.status(401)
-
-      if (e.code === 'ERR_JWT_EXPIRED') {
-        res.json(AUTH_GENERIC_ERROR_REFRESH);
-      } else {
-        res.json(AUTH_GENERIC_ERROR);
+    if (req.user === undefined || req.permissions === undefined) {
+      const authorization = req.get('authorization');
+      if (!authorization || typeof authorization !== 'string' || !authorization.startsWith("Bearer ")) {
+        res.status(401).json(AUTH_GENERIC_ERROR);
+        return;
       }
 
-      return;
-    }
+      // decode and verify the token
+      let jwt;
+      try {
+        jwt = await jose.jwtVerify(authorization.substring("Bearer ".length), JWT_PUBKEY, {
+          issuer: 'urn:stocktrack',
+          audience: 'urn:stocktrack:be'
+        });
+      } catch (e) {
+        res.status(401)
 
-    // check if the token is revoked
-    let userId;
-    try {
-      userId = ObjectId.createFromBase64(jwt.payload.uid);
-    } catch (e) {
-      res.status(500).json(AUTH_GENERIC_SERVER_ERROR);
-      return;
-    }
+        if (e.code === 'ERR_JWT_EXPIRED') {
+          res.json(AUTH_GENERIC_ERROR_REFRESH);
+        } else {
+          res.json(AUTH_GENERIC_ERROR);
+        }
 
-    const user = await collections.user.findOne({_id: userId});
+        return;
+      }
 
-    if (user.tokenInvalidTime && user.tokenInvalidTime instanceof Date && user.tokenInvalidTime.getTime() >= jwt.payload.iat * 1000) {
-      res.status(401).json(AUTH_GENERIC_ERROR_REFRESH);
-      return;
+      // check if the token is revoked
+      let userId;
+      try {
+        userId = ObjectId.createFromBase64(jwt.payload.uid);
+      } catch (e) {
+        res.status(500).json(AUTH_GENERIC_SERVER_ERROR);
+        return;
+      }
+
+      const user = await collections.user.findOne({_id: userId});
+
+      if (user.tokenInvalidTime && user.tokenInvalidTime instanceof Date && user.tokenInvalidTime.getTime() >= jwt.payload.iat * 1000) {
+        res.status(401).json(AUTH_GENERIC_ERROR_REFRESH);
+        return;
+      }
+
+      req.user = user;
+      req.permissions = Long.fromBytesBE(Buffer.from(jwt.payload.p, 'base64'), true).toBigInt();
     }
 
     // check permissions
-    const permissions = Long.fromBytesBE(Buffer.from(jwt.payload.p, 'base64'), true).toBigInt();
-    let checkRes = permCheckFun(permissions);
+    let checkRes = permCheckFun(req.permissions);
     if (checkRes instanceof Promise) {
       checkRes = await checkRes;
     }
