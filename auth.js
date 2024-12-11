@@ -129,8 +129,6 @@ module.exports.requireAuth = (permissions) => {
       return;
     }
 
-    req.user = user;
-
     return next();
   };
 }
