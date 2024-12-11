@@ -104,6 +104,11 @@ module.exports.requireAuth = (permissions) => {
 
       const user = await collections.user.findOne({_id: userId});
 
+      if (!user) {
+        res.status(401).json(AUTH_GENERIC_ERROR);
+        return;
+      }
+
       if (user.tokenInvalidTime && user.tokenInvalidTime instanceof Date && user.tokenInvalidTime.getTime() >= jwt.payload.iat * 1000) {
         res.status(401).json(AUTH_GENERIC_ERROR_REFRESH);
         return;
