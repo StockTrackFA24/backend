@@ -3,10 +3,12 @@ const app = express()
 const port = 4000
 
 app.use(express.json())
+const permissions = require('./permissions.js');
 
 const {createItem, removeItem, createBatch, removeBatch, batchStock, queryFromString, queryForBatches, exportToCSV, itemUpdate, importFromCSV, auditQuery, createRole, roleQuery, createAccount, accountQuery} = require('./main.js')
+const {requireAuth}=require('./auth.js')
 
-app.post('/createItem', async (req, res) => {
+app.post('/createItem', requireAuth(permissions.CREATE_ITEM), async (req, res) => {
   let itemAttributes = {
     name : req.body.name,
     description : req.body.description,
@@ -15,74 +17,74 @@ app.post('/createItem', async (req, res) => {
     stock: req.body.stock,
   };
   try{
-    output=await createItem(itemAttributes)
+    output=await createItem(itemAttributes, req.body.uid, req.permissions)
     res.send(output)
   } catch(e){
     console.error(e)
   }
 })
 
-app.post('/removeItem', async (req, res) => {
+app.post('/removeItem', requireAuth(permissions.DELETE_ITEM), async (req, res) => {
   let item = {
     name: req.body.name,
     _id: req.body._id
   }
   try{
-    output= await removeItem(item)
+    output= await removeItem(item, req.body.uid)
     res.send(output)
   } catch(e){
     console.error(e)
   }
 })
 
-app.post('/createBatch', async (req, res) => {
+app.post('/createBatch', requireAuth(permissions.CREATE_BATCH), async (req, res) => {
   let batchAttributes = {
     name: req.body.name,
     stock: req.body.stock,
   }
   try{
-    output=await createBatch(batchAttributes)
+    output=await createBatch(batchAttributes, req.body.uid)
     res.send(output)
   } catch(e){
     console.error(e)
   }
 })
 
-app.post('/removeBatch', async (req, res) => {
+app.post('/removeBatch', requireAuth(permissions.DELETE_BATCH), async (req, res) => {
   let batchID = req.body._id;
   try{
-    output=await removeBatch({_id: batchID})
+    output=await removeBatch({_id: batchID}, req.body.uid)
     res.send(output)
   } catch(e){
     console.error(e)
   }
 })
 
-app.post('/batchStock', async (req, res) => {
+app.post('/batchStock', requireAuth(permissions.EDIT_BATCH), async (req, res) => {
   let batchID = req.body._id;
   let increment = req.body.stock;
   try{
-    output= await batchStock({_id: batchID, stock: increment});
+    output= await batchStock({_id: batchID, stock: increment}, req.body.uid);
     res.send(output)
   } catch(e){
     console.error(e)
   }
 })
 
-app.post('/standardQuery', async (req, res) => {
+app.post('/standardQuery', requireAuth(permissions.ITEM_QUERY), async (req, res) => {
   let query = req.body["sub"];
   try{
-    list= await queryFromString(query)
+    list= await queryFromString(query, req.body.uid)
     res.send(list)
   } catch(e){
     console.error(e)
   }
 })
 
-app.post('/batchesQuery', async (req, res) => {
+app.post('/batchesQuery', requireAuth(permissions.BATCH_QUERY), async (req, res) => {
   let query = req.body["sub"];
   try{
-    batches= await queryForBatches({sub: query})
+    batches= await queryForBatches({sub: query}, req.body.uid)
     res.send(batches)
   } catch(e){
     console.error(e)
@@ -91,35 +93,23 @@ app.post('/batchesQuery', async (req, res) => {
 
 app.post('/roleQuery', async (req, res) => {
   try{
-    roles = await roleQuery()
+    roles = await roleQuery(req.body.uid)
     res.send(roles)
   } catch(e){
     console.error(e)
   }
 })
 
-app.post('/accountQuery', async (req, res) => {
+app.post('/accountQuery', requireAuth(permissions.ACCOUNT_QUERY), async (req, res) => {
   try{
-    accounts = await accountQuery()
+    accounts = await accountQuery(req.body.uid)
     res.send(accounts)
   } catch(e){
     console.error(e)
   }
 })
 
-app.post('/batchesQuery', async (req, res) => {
-  let query = req.body["sub"];
-  try{
-    batches= await queryForBatches({sub: query})
-    res.send(batches)
-  } catch(e){
-    console.error(e)
-  }
-  batches= await queryForBatches({sub: query})
-  res.send(batches)
-})
-
-app.post('/itemUpdate', async (req, res) => {
+app.post('/itemUpdate', requireAuth(permissions.EDIT_ITEM), async (req, res) => {
   let itemAttributes = {
     _id : req.body._id,
     name : req.body.name,
@@ -128,7 +118,7 @@ app.post('/itemUpdate', async (req, res) => {
     price: req.body.price,
   };
   try{
-    output=await itemUpdate(itemAttributes);
+    output=await itemUpdate(itemAttributes, req.body.uid);
     res.send(output);
   } catch(e){
     console.error(e)
@@ -138,7 +128,7 @@ app.post('/itemUpdate', async (req, res) => {
 
 app.post('/exportItems', async (req, res) => {
   try{
-    let csvstring = await(exportToCSV())
+    let csvstring = await(exportToCSV(req.body.uid))
     res.send(csvstring)
   } catch(e){
     console.error(e)
@@ -148,23 +138,23 @@ app.post('/exportItems', async (req, res) => {
 app.post('/importCSV', async (req, res) => {
   let csvString = req.body.csvString
   try{
-    await importFromCSV(csvString)
+    await importFromCSV(csvString, req.body.uid)
     res.send("import complete")
   } catch(e){
     console.error(e)
   }
 })
 
-app.post('/auditQuery', async (req, res) => {
+app.post('/auditQuery', requireAuth(permissions.AUDIT_QUERY), async (req, res) => {
   try{
-    output = await auditQuery();
+    output = await auditQuery(req.body.uid);
     res.send(output);
   } catch(e){
     console.error(e)
   }
 })
 
-app.post('/createRole', async (req, res) => {
+app.post('/createRole', requireAuth(permissions.CREATE_ROLE), async (req, res) => {
   let roleAttributes = {
     role_name : req.body.role_name,
     description : req.body.description,
@@ -172,14 +162,14 @@ app.post('/createRole', async (req, res) => {
     Perms : req.body.Perms,
   };
   try{
-    output = await createRole(roleAttributes);
+    output = await createRole(roleAttributes, req.body.uid);
     res.send(output);
   } catch(e){
     console.error(e)
   }
 })
 
-app.post('/createAccount', async (req, res) => {
+app.post('/createAccount', requireAuth(permissions.CREATE_ACCOUNT), async (req, res) => {
   let accountAttributes = {
     name: {
       first : req.body.name.first,
@@ -192,7 +182,7 @@ app.post('/createAccount', async (req, res) => {
   };
 
   try{
-    output = await createAccount(accountAttributes);
+    output = await createAccount(accountAttributes, req.body.uid);
     res.send(output);
   } catch(e){
     console.error(e)

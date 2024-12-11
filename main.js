@@ -1,4 +1,4 @@
-const {MongoClient, Long} = require('mongodb');
+const {ObjectId, MongoClient, Long} = require('mongodb');
 
 const axios = require('axios');
 require('./loadenv.js');
@@ -8,10 +8,12 @@ const {json2csv} = require("json-2-csv");
 
 const { collections } = require('./mongodb.js');
 
+const permissions = require('./permissions.js');
+
 //const {defPermissionFunction} = require('./auth.js')
 
 //Create a new item in the catalog
-async function createItem(newCatalog){
+async function createItem(newCatalog, uid, perms){
 
     if (typeof newCatalog.name == "undefined"){
         return "Error: Item had no name."
@@ -31,8 +33,6 @@ async function createItem(newCatalog){
 
     id=await generateSKU()
 
-    //test=defPermissionFunction()
-
     newStock={
         _id: id,
         stock: newCatalog.stock,
@@ -44,11 +44,15 @@ async function createItem(newCatalog){
     newName=newCatalog.name
     contains=await collections.catalog.findOne({name: newName})
     if (contains){
+        if ((permissions.CREATE_BATCH & perms) !== permissions.CREATE_BATCH){
+            return "No perms to create batch"
+        }
+
         SKU=contains._id
         await createBatch({
             name: newName,
             stock: newStock.stock
-        })
+        }, uid)
         return "Item already existed, so new batch created instead"
     }
 
@@ -60,16 +64,16 @@ async function createItem(newCatalog){
         await createBatch({
             name: newName,
             stock: newStock.stock
-        })
+        }, uid)
     }
 
-    await auditLogs("Bob", `Created item, ${newCatalog.name}, made with id of: ${result.insertedId}`)
+    await auditLogs(uid, `Created item, ${newCatalog.name}, made with id of: ${result.insertedId}`)
 
     return `New Listing made with id of: ${result.insertedId}`
 }
 
 //Remove item from Catalog given the name
-async function removeItem(removeCatalog){
+async function removeItem(removeCatalog, uid){
     if (removeCatalog.name !=null ){
         deleting=await collections.catalog.findOne({name: removeCatalog.name})
     }
@@ -84,7 +88,7 @@ async function removeItem(removeCatalog){
     id=deleting._id
     await collections.stock.deleteOne({_id: id})
 
-    await auditLogs("Bob", `Deleted item: ${itemName}`)
+    await auditLogs(uid, `Deleted item: ${itemName}`)
 
     return `Deleted item: ${itemName}`
 }
@@ -104,7 +108,7 @@ async function getStock(id){
 }
 
 //Add a batch given the stock of batch, name of item
-async function createBatch(newBatch){
+async function createBatch(newBatch, uid){
     if (typeof newBatch.name == "undefined"){
         return "Error: Need an item name."
     }
@@ -134,13 +138,13 @@ async function createBatch(newBatch){
 
     await collections.stock.updateOne({_id: SKU},{$rename: {batch: "batch".concat(id)}})
 
-    await auditLogs("Bob", `New batch created with id: ${id}`)
+    await auditLogs(uid, `New batch created with id: ${id}`)
 
     return `New batch created with id: ${id}`
 }
 
 //Remove a batch given the batch id
-async function removeBatch(batchId){
+async function removeBatch(batchId, uid){
     if (typeof batchId._id == "undefined"){
         return "Error: Need a batch id."
     }
@@ -167,13 +171,13 @@ async function removeBatch(batchId){
         return "Item was removed due to final batch being removed"
     }
 
-    await auditLogs("Bob", `${batch} was removed.`)
+    await auditLogs(uid, `${batch} was removed.`)
 
     return `${batch} was removed.`
 }
 
 //Take some stock away or increase stock in anyt given batch given batch id, and stock change
-async function batchStock(editBatch){
+async function batchStock(editBatch, uid){
     if (typeof editBatch._id == "undefined"){
         return "Error: Need a batch id."
     }
@@ -213,13 +217,13 @@ async function batchStock(editBatch){
         }}})
         await collections.stock.updateOne({[batch]: {$exists: true}}, {$set: {stock: item.stock-stockChange}})
 
-        await auditLogs("Bob", `${batch} stock was altered by ${stockChange}`)
+        await auditLogs(uid, `${batch} stock was altered by ${stockChange}`)
 
         return `${batch} stock was altered.`
 
 }
 
-async function exportToCSV() {
+async function exportToCSV(uid) {
     let catalogList = []
     let stockList = []
     let catalogCursor = await collections.catalog.find({})
@@ -234,7 +238,7 @@ async function exportToCSV() {
         catalogList[i].stock =stockList[i].stock
     }
 
-    await auditLogs("Bob", "Exported a file")
+    await auditLogs(uid, "Exported a file")
     return json2csv(catalogList);
     /*
     console.log(csvString);
@@ -297,7 +301,7 @@ async function generateBatchId() {
     return id
 }
 
-async function importFromCSV(csvString) {
+async function importFromCSV(csvString, uid) {
     csvString = csvString.replaceAll("\r\n", "\n");
     let converted_objects = converter.csv2json(csvString);
     for (const item of converted_objects) {
@@ -308,11 +312,11 @@ async function importFromCSV(csvString) {
             price: item.price,
             stock: item.stock,
         }
-        await createItem(newItemCatalog);
+        await createItem(newItemCatalog, uid);
 
     }
 
-    await auditLogs("Bob", "imported a file")
+    await auditLogs(uid, "imported a file")
     /*
     for (const item of converted_objects) {
         let extra_keys = Object.keys(item);
@@ -334,7 +338,7 @@ async function importFromCSV(csvString) {
 }
 
 //Return an array of any item that matches the substring given. Checks name and id, and category. Array includes items name and total stock level
-async function queryFromString(queryString){
+async function queryFromString(queryString, uid){
 
     //A list of everything in the catalog
     list=await collections.catalog.find({ _id: { $exists: true } }).toArray()
@@ -354,19 +358,21 @@ async function queryFromString(queryString){
         list[i].stock=stock.stock;
     }
 
-    await auditLogs("Bob", `Searched the database for items with ${queryString}`)
+    await auditLogs(uid, `Searched the database for items with ${queryString}`)
 
     return list
 }
 
-async function roleQuery(){
+async function roleQuery(uid){
 
     list = await collections.role.find({ _id: { $exists: true } }).toArray();
+
+    await auditLogs(uid, "Searched for batches")
 
     return list;
 }
 
-async function accountQuery() {
+async function accountQuery(uid) {
 
 
     list = await collections.user.aggregate( [
@@ -395,11 +401,13 @@ async function accountQuery() {
         }
     ]).toArray();
 
+    await auditLogs(uid, "Searched for accounts")
+
     return list;
 }
 
 //Returns all batches associated with a substr tied to either name or SKU
-async function queryForBatches(subString){
+async function queryForBatches(subString, uid){
 
     substr=subString.sub.toLowerCase()
 
@@ -453,13 +461,13 @@ async function queryForBatches(subString){
         }
     }
 
-    await auditLogs("Bob", "Searched for batches with "+subString.sub)
+    await auditLogs(uid, "Searched for batches with "+subString.sub)
 
     return allBatches
 }
 
 //Update an item based off of SKU
-async function itemUpdate(newItem){
+async function itemUpdate(newItem, uid){
 
     contains=await collections.catalog.findOne({_id: newItem._id})
     if (!contains){
@@ -485,7 +493,7 @@ async function itemUpdate(newItem){
         await collections.catalog.updateOne({_id: newItem._id}, {$set: {price: newItem.price}})
     }
 
-    await auditLogs("Bob", `Updated Listing with id of: ${newItem._id}`)
+    await auditLogs(uid, `Updated Listing with id of: ${newItem._id}`)
 
     return `Updated Listing with id of: ${newItem._id}`
 }
@@ -502,16 +510,22 @@ async function auditLogs(user, description){
 }
 
 //Return a list of all logs sorted by time
-async function auditQuery(){
+async function auditQuery(uid){
     logs=await collections.audit.find({ _id: { $exists: true } }).toArray()
     logs.reverse()
+    for (i=0; i<logs.length;i++){
+        printUID=ObjectId.createFromBase64(uid)
+        user=await collections.user.findOne({_id: printUID})
+        username=user.username
+        logs[i].user=username
+    }
 
-    await auditLogs("Bob", `Looked at the audit logs`)
+    await auditLogs(uid, `Looked at the audit logs`)
 
     return logs
 }
 
-async function createRole(newRole){
+async function createRole(newRole, uid){
 
     if (typeof newRole.role_name == "undefined") {
         return "Error: Role had no name."
@@ -552,12 +566,12 @@ async function createRole(newRole){
 
     const result = await collections.role.insertOne(newerRole);
 
-    await auditLogs("Bob", `Created a role with id of ${result.insertedId}`)
+    await auditLogs(uid, `Created a role with id of ${result.insertedId}`)
 
     return `New role created with id of ${result.insertedId}`;
 }
 
-async function createAccount(newUser) {
+async function createAccount(newUser, uid) {
 
     if (typeof newUser.name == "undefined") {
         return "Error: User had no name."
@@ -588,13 +602,12 @@ async function createAccount(newUser) {
       }
       )
       .then(function (response) {
-        console.log(response);
       })
       .catch(function (error) {
         console.log(error);
       });
       
-    await auditLogs("Bob", `Created a user with id of ${result.insertedId}`);
+    await auditLogs(uid, `Created a user with id of ${result.insertedId}`);
 
     return `New user created with id of ${result.insertedId}`;
 }
