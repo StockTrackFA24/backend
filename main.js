@@ -67,9 +67,10 @@ async function createItem(newCatalog, uid, perms){
         }, uid)
     }
 
-    await auditLogs(uid, `Created item, ${newCatalog.name}, made with id of: ${result.insertedId}`)
 
-    return `New Listing made with id of: ${result.insertedId}`
+    await auditLogs(uid, `Created item, `+JSON.stringify(newCatalog))
+
+    return `New Listing made with id of: ${result.insertedId}, and initial stock of ${newStock.stock}`
 }
 
 //Remove item from Catalog given the name
@@ -119,6 +120,10 @@ async function createBatch(newBatch, uid){
     itemName=newBatch.name
     newStock=newBatch.stock
     catalogItem= await collections.catalog.findOne({name: itemName})
+
+    totalStock=catalogItem.stock+newStock
+    oldStock=catalogItem.stock
+
     if (catalogItem == null){
         return "Error: Item name does not exist"
     }
@@ -138,7 +143,7 @@ async function createBatch(newBatch, uid){
 
     await collections.stock.updateOne({_id: SKU},{$rename: {batch: "batch".concat(id)}})
 
-    await auditLogs(uid, `New batch created with id: ${id}`)
+    await auditLogs(uid, `New batch created, `+JSON.stringify(batch))
 
     return `New batch created with id: ${id}`
 }
@@ -194,6 +199,7 @@ async function batchStock(editBatch, uid){
         if (item == null){
             return "Error: Batch ID does not exist"
         }
+        originalItem=item
 
         batchStock=item[batch].stock
         if (batchStock<=stockChange){
@@ -216,8 +222,9 @@ async function batchStock(editBatch, uid){
             stock: item[batch].stock-stockChange
         }}})
         await collections.stock.updateOne({[batch]: {$exists: true}}, {$set: {stock: item.stock-stockChange}})
+        newItem=await collections.stock.findOne({[batch]: {$exists: true}})
 
-        await auditLogs(uid, `${batch} stock was altered by ${stockChange}`)
+        await auditLogs(uid, `Batch change: `+JSON.stringify(item[batch])+` was changed to `+JSON.stringify(newItem[batch]))
 
         return `${batch} stock was altered.`
 
@@ -493,7 +500,9 @@ async function itemUpdate(newItem, uid){
         await collections.catalog.updateOne({_id: newItem._id}, {$set: {price: newItem.price}})
     }
 
-    await auditLogs(uid, `Updated Listing with id of: ${newItem._id}`)
+    newItem=await collections.catalog.findOne({name: newItem.name})
+
+    await auditLogs(uid, `Updated Listing: `+ JSON.stringify(contains)+` was changed to `+JSON.stringify(newItem))
 
     return `Updated Listing with id of: ${newItem._id}`
 }
