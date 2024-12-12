@@ -17,7 +17,7 @@ app.post('/createItem', requireAuth(permissions.CREATE_ITEM), async (req, res) =
     stock: req.body.stock,
   };
   try{
-    output=await createItem(itemAttributes, req.body.uid, req.permissions)
+    output=await createItem(itemAttributes, req.user._id, req.permissions)
     res.send(output)
   } catch(e){
     console.error(e)
@@ -30,7 +30,7 @@ app.post('/removeItem', requireAuth(permissions.DELETE_ITEM), async (req, res) =
     _id: req.body._id
   }
   try{
-    output= await removeItem(item, req.body.uid)
+    output= await removeItem(item, req.user._id)
     res.send(output)
   } catch(e){
     console.error(e)
@@ -43,7 +43,7 @@ app.post('/createBatch', requireAuth(permissions.CREATE_BATCH), async (req, res)
     stock: req.body.stock,
   }
   try{
-    output=await createBatch(batchAttributes, req.body.uid)
+    output=await createBatch(batchAttributes, req.user._id)
     res.send(output)
   } catch(e){
     console.error(e)
@@ -53,7 +53,7 @@ app.post('/createBatch', requireAuth(permissions.CREATE_BATCH), async (req, res)
 app.post('/removeBatch', requireAuth(permissions.DELETE_BATCH), async (req, res) => {
   let batchID = req.body._id;
   try{
-    output=await removeBatch({_id: batchID}, req.body.uid)
+    output=await removeBatch({_id: batchID}, req.user._id)
     res.send(output)
   } catch(e){
     console.error(e)
@@ -64,7 +64,7 @@ app.post('/batchStock', requireAuth(permissions.EDIT_BATCH), async (req, res) =>
   let batchID = req.body._id;
   let increment = req.body.stock;
   try{
-    output= await batchStock({_id: batchID, stock: increment}, req.body.uid);
+    output= await batchStock({_id: batchID, stock: increment}, req.user._id);
     res.send(output)
   } catch(e){
     console.error(e)
@@ -74,7 +74,7 @@ app.post('/batchStock', requireAuth(permissions.EDIT_BATCH), async (req, res) =>
 app.post('/standardQuery', requireAuth(permissions.ITEM_QUERY), async (req, res) => {
   let query = req.body["sub"];
   try{
-    list= await queryFromString(query, req.body.uid)
+    list= await queryFromString(query, req.user._id)
     res.send(list)
   } catch(e){
     console.error(e)
@@ -84,7 +84,7 @@ app.post('/standardQuery', requireAuth(permissions.ITEM_QUERY), async (req, res)
 app.post('/batchesQuery', requireAuth(permissions.BATCH_QUERY), async (req, res) => {
   let query = req.body["sub"];
   try{
-    batches= await queryForBatches({sub: query}, req.body.uid)
+    batches= await queryForBatches({sub: query}, req.user._id)
     res.send(batches)
   } catch(e){
     console.error(e)
@@ -93,7 +93,7 @@ app.post('/batchesQuery', requireAuth(permissions.BATCH_QUERY), async (req, res)
 
 app.post('/roleQuery', async (req, res) => {
   try{
-    roles = await roleQuery(req.body.uid)
+    roles = await roleQuery(req.user._id)
     res.send(roles)
   } catch(e){
     console.error(e)
@@ -102,7 +102,7 @@ app.post('/roleQuery', async (req, res) => {
 
 app.post('/accountQuery', requireAuth(permissions.ACCOUNT_QUERY), async (req, res) => {
   try{
-    accounts = await accountQuery(req.body.uid)
+    accounts = await accountQuery(req.user._id)
     res.send(accounts)
   } catch(e){
     console.error(e)
@@ -118,7 +118,7 @@ app.post('/itemUpdate', requireAuth(permissions.EDIT_ITEM), async (req, res) => 
     price: req.body.price,
   };
   try{
-    output=await itemUpdate(itemAttributes, req.body.uid);
+    output=await itemUpdate(itemAttributes, req.user._id);
     res.send(output);
   } catch(e){
     console.error(e)
@@ -128,7 +128,7 @@ app.post('/itemUpdate', requireAuth(permissions.EDIT_ITEM), async (req, res) => 
 
 app.post('/exportItems', requireAuth(permissions.ITEM_QUERY), async (req, res) => {
   try{
-    let csvstring = await(exportToCSV(req.body.uid))
+    let csvstring = await(exportToCSV(req.user._id))
     res.send(csvstring)
   } catch(e){
     console.error(e)
@@ -139,7 +139,7 @@ app.post('/importCSV', requireAuth(permissions.CREATE_ITEM | permissions.CREATE_
   let csvString = req.body.csvString
   console.log(req.permissions)
   try{
-    await importFromCSV(csvString, req.body.uid, req.permissions)
+    await importFromCSV(csvString, req.user._id, req.permissions)
     res.send("import complete")
   } catch(e){
     console.error(e)
@@ -148,7 +148,7 @@ app.post('/importCSV', requireAuth(permissions.CREATE_ITEM | permissions.CREATE_
 
 app.post('/auditQuery', requireAuth(permissions.AUDIT_QUERY), async (req, res) => {
   try{
-    output = await auditQuery(req.body.uid);
+    output = await auditQuery(req.user._id);
     res.send(output);
   } catch(e){
     console.error(e)
@@ -163,7 +163,7 @@ app.post('/createRole', requireAuth(permissions.CREATE_ROLE), async (req, res) =
     Perms : req.body.Perms,
   };
   try{
-    output = await createRole(roleAttributes, req.body.uid);
+    output = await createRole(roleAttributes, req.user._id);
     res.send(output);
   } catch(e){
     console.error(e)
@@ -183,7 +183,7 @@ app.post('/createAccount', requireAuth(permissions.CREATE_ACCOUNT), async (req, 
   };
 
   try{
-    output = await createAccount(accountAttributes, req.body.uid);
+    output = await createAccount(accountAttributes, req.user._id);
     res.send(output);
   } catch(e){
     console.error(e)

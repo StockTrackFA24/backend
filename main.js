@@ -502,7 +502,7 @@ async function itemUpdate(newItem, uid){
 async function auditLogs(user, description){
     await collections.audit.insertOne({
         user: user,
-        timestamp: new Date(Date.now()),
+        timestamp: new Date(),
         description: description
     })
 
@@ -511,14 +511,28 @@ async function auditLogs(user, description){
 
 //Return a list of all logs sorted by time
 async function auditQuery(uid){
-    logs=await collections.audit.find({ _id: { $exists: true } }).toArray()
-    logs.reverse()
-    for (i=0; i<logs.length;i++){
-        printUID=ObjectId.createFromBase64(uid)
-        user=await collections.user.findOne({_id: printUID})
-        username=user.username
-        logs[i].user=username
-    }
+    logs=await collections.audit.aggregate([
+        {
+            $sort: {
+                timestamp: -1
+            }
+        },
+        {
+            $lookup: {
+                from: process.env.USER_COLLECTION,
+                localField: 'user',
+                foreignField: '_id',
+                as: 'actor',
+                pipeline: [
+                    {
+                        $project: {
+                            username: 1
+                        }
+                    }
+                ]
+            },
+        },
+    ]).toArray();
 
     await auditLogs(uid, `Looked at the audit logs`)
 

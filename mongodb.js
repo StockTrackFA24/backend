@@ -15,6 +15,7 @@ const collections = {
 (async () => {
   await client.connect();
 
+  await collections.audit.createIndex({timestamp: -1});
   await collections.catalog.createIndex({name: 1});
 
   // create indexes and do other collection setup here :) - cullen
