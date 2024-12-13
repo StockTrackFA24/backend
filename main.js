@@ -247,19 +247,6 @@ async function exportToCSV(uid) {
 
     await auditLogs(uid, "Exported a file")
     return json2csv(catalogList);
-    /*
-    console.log(csvString);
-    fs.writeFile(file_path, csvString, err => {
-        if (err) {
-            console.error(err);
-        }
-        else {
-            console.log(`CSV output written to ${file_path}`);
-        }
-
-
-    });
-     */
 }
 
 //Create a unique SKU value
@@ -324,24 +311,6 @@ async function importFromCSV(csvString, uid, perms) {
     }
 
     await auditLogs(uid, "imported a file")
-    /*
-    for (const item of converted_objects) {
-        let extra_keys = Object.keys(item);
-        delete extra_keys[extra_keys.indexOf('_id')];
-        delete extra_keys[extra_keys.indexOf('stock')];
-        let converted_catalog = {}
-        let converted_stock = {}
-        converted_catalog['_id'] = item._id;
-        extra_keys.forEach(key=>{
-            converted_catalog[key] = item[key];
-        })
-        converted_stock['_id'] = item._id;
-        converted_stock['stock'] = item.stock;
-        await createItem(mongo, converted_catalog, converted_stock);
-        await auditLogs("Bob", "Imported a file")
-    }
-
-     */
 }
 
 //Return an array of any item that matches the substring given. Checks name and id, and category. Array includes items name and total stock level

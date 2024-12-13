@@ -137,7 +137,6 @@ app.post('/exportItems', requireAuth(permissions.ITEM_QUERY), async (req, res) =
 
 app.post('/importCSV', requireAuth(permissions.CREATE_ITEM | permissions.CREATE_BATCH), async (req, res) => {
   let csvString = req.body.csvString
-  console.log(req.permissions)
   try{
     await importFromCSV(csvString, req.user._id, req.permissions)
     res.send("import complete")
