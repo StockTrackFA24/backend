@@ -365,7 +365,12 @@ async function queryFromString(queryString, uid){
         list[i].stock=stock.stock;
     }
 
-    await auditLogs(uid, `Searched the database for items with ${queryString}`)
+    if (queryString==""){
+        await auditLogs(uid, "Searched the database")
+    }
+    else {
+        await auditLogs(uid, `Searched the database for items with ${queryString}`)
+    }
 
     return list
 }
@@ -374,7 +379,7 @@ async function roleQuery(uid){
 
     list = await collections.role.find({ _id: { $exists: true } }).toArray();
 
-    await auditLogs(uid, "Searched for batches")
+    await auditLogs(uid, "Searched for roles")
 
     return list;
 }
@@ -468,7 +473,12 @@ async function queryForBatches(subString, uid){
         }
     }
 
-    await auditLogs(uid, "Searched for batches with "+subString.sub)
+    if (subString.sub==""){
+        await auditLogs(uid, "Searched for batches")
+    }
+    else {
+        await auditLogs(uid, "Searched for batches with "+subString.sub)
+    }
 
     return allBatches
 }
@@ -589,7 +599,7 @@ async function createRole(newRole, uid){
 
     const result = await collections.role.insertOne(newerRole);
 
-    await auditLogs(uid, `Created a role with id of ${result.insertedId}`)
+    await auditLogs(uid, `Created a role: ${JSON.stringify(newRole)}`)
 
     return `New role created with id of ${result.insertedId}`;
 }
@@ -630,7 +640,7 @@ async function createAccount(newUser, uid) {
         console.log(error);
       });
       
-    await auditLogs(uid, `Created a user with id of ${result.insertedId}`);
+    await auditLogs(uid, `Created a user: ${JSON.stringify(newUser)}`);
 
     return `New user created with id of ${result.insertedId}`;
 }

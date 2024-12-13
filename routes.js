@@ -91,7 +91,7 @@ app.post('/batchesQuery', requireAuth(permissions.BATCH_QUERY), async (req, res)
   }
 })
 
-app.post('/roleQuery', async (req, res) => {
+app.post('/roleQuery',requireAuth(), async (req, res) => {
   try{
     roles = await roleQuery(req.user._id)
     res.send(roles)
